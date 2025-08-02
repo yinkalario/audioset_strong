@@ -13,8 +13,8 @@ import argparse
 from pathlib import Path
 
 # Target labels and names configuration
-target_labels = ['/m/01d3sd', '/m/07q0yl5']  # Snoring, Snort
-target_name = 'snore'
+target_labels = ['/t/dd00002']  # Baby cry, infant cry
+target_name = 'baby_cry'
 
 # target_labels = ['/m/01d3sd', '/m/07q0yl5']  # Snoring, Snort
 # target_name = 'snore'
