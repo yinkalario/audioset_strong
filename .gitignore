@@ -1,3 +1,9 @@
+# Ignore all metadata directories
+meta/*/
+
+# Output files
+out/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -22,23 +22,33 @@ The AudioSet strong labeling dataset includes:
 
 ```
 audioset_strong/
-├── meta/                           # Metadata files
+├── meta/                           # Metadata files (ignored by git)
 │   ├── audioset_train_strong.tsv   # Training strong labels
 │   ├── audioset_eval_strong.tsv    # Evaluation strong labels
 │   ├── audioset_eval_strong_framed_posneg.tsv  # Framed pos/neg labels
 │   ├── mid_to_display_name.tsv     # Label ID to name mapping
-│   ├── baby_cry/                   # Extracted baby cry metadata
-│   ├── gun/                        # Extracted gun sound metadata
-│   └── snore/                      # Extracted snore sound metadata
+│   ├── baby_cry/                   # Baby cry metadata
+│   │   ├── raw/
+│   │   │   ├── pos/                # Raw positive labels
+│   │   │   └── neg_strong/         # Raw negative labels
+│   │   └── seg1s/
+│   │       ├── pos/                # 1-second segmented positive labels
+│   │       └── neg_strong/         # 1-second segmented negative labels
+│   ├── gun/                        # Gun sound metadata (same structure)
+│   └── snore/                      # Snore sound metadata (same structure)
 ├── src/                            # Source code
-│   ├── generate_target_sound_meta.py  # Main extraction script
+│   ├── generate_raw_target_meta.py    # Extract raw positive metadata
+│   ├── generate_raw_neg_meta.py       # Extract raw negative metadata
+│   ├── generate_seg_target_meta.py    # Generate segmented positive metadata
+│   ├── generate_seg_neg_meta.py       # Generate segmented negative metadata
 │   └── analyze_label_distribution.py  # Distribution analysis script
-├── out/                            # Analysis outputs
+├── out/                            # Analysis outputs (ignored by git)
 │   ├── label_distribution_analysis.png
 │   ├── top_labels_detailed.png
 │   └── label_distribution_stats.csv
 ├── scripts/                        # Utility scripts
-├── configs/                        # Configuration files
+│   ├── create_env.sh               # Environment setup
+│   └── process_audioset_metadata.sh  # Complete processing pipeline
 └── requirements.txt               # Python dependencies
 ```
 
@@ -62,9 +72,27 @@ audioset_strong/
 
 ## Usage
 
-### 1. Extract Target Sound Metadata
+### Quick Start (Recommended)
 
-The main script `generate_target_sound_meta.py` extracts specific sound types and categorizes them into overlapped and non-overlapped events.
+For processing all sound types automatically, use the provided bash script:
+
+```bash
+bash scripts/process_audioset_metadata.sh
+```
+
+This script will automatically:
+1. Generate raw positive metadata for baby_cry, gun, and snore sounds
+2. Generate raw negative metadata for all three sound types
+3. Generate 1-second segmented positive metadata
+4. Generate 1-second segmented negative metadata
+
+### Manual Processing (Advanced)
+
+If you need to process individual sound types or customize the workflow:
+
+#### 1. Extract Raw Positive Metadata
+
+The script `generate_raw_target_meta.py` extracts specific sound types and categorizes them into overlapped and non-overlapped events.
 
 **Configuration**: Edit the target labels at the top of the script:
 
@@ -84,18 +112,34 @@ target_name = 'snore'
 
 **Run extraction**:
 ```bash
-python src/generate_target_sound_meta.py --input-dir meta --output-dir meta
+python src/generate_raw_target_meta.py --input-dir meta --output-dir meta
 ```
 
-**Output**: Creates `meta/{target_name}/` directory with 6 files:
-- `{target_name}_nov_audioset_train_strong.tsv` - Non-overlapped training events
-- `{target_name}_ov_audioset_train_strong.tsv` - Overlapped training events
-- `{target_name}_nov_audioset_eval_strong.tsv` - Non-overlapped evaluation events
-- `{target_name}_ov_audioset_eval_strong.tsv` - Overlapped evaluation events
-- `{target_name}_nov_audioset_eval_strong_framed_posneg.tsv` - Non-overlapped framed events
-- `{target_name}_ov_audioset_eval_strong_framed_posneg.tsv` - Overlapped framed events
+#### 2. Extract Raw Negative Metadata
 
-### 2. Analyze Label Distribution
+Generate negative samples (clips without target sounds):
+
+```bash
+python src/generate_raw_neg_meta.py --input-dir meta --output-dir meta
+```
+
+#### 3. Generate Segmented Positive Metadata
+
+Create 1-second segments from positive samples:
+
+```bash
+python src/generate_seg_target_meta.py
+```
+
+#### 4. Generate Segmented Negative Metadata
+
+Create 1-second segments from negative samples:
+
+```bash
+python src/generate_seg_neg_meta.py
+```
+
+#### 5. Analyze Label Distribution (Optional)
 
 Analyze the distribution of all labels in the dataset by total duration:
 
@@ -134,6 +178,31 @@ target_labels = ['/m/032s66', '/m/04zjc', '/m/073cg4']
 target_name = 'gun'
 ```
 
+## Automated Processing Pipeline
+
+The `scripts/process_audioset_metadata.sh` script automates the entire metadata processing workflow:
+
+**Features:**
+- **Automatic configuration**: Updates target labels for each sound type automatically
+- **Error handling**: Stops on any error and provides clear error messages
+- **Progress tracking**: Colored output showing progress through each step
+- **Validation**: Checks for required files and directories before starting
+- **Summary**: Displays final directory structure and statistics
+
+**Usage:**
+```bash
+# Make sure you're in the audioset_strong root directory
+bash scripts/process_audioset_metadata.sh
+```
+
+**What it does:**
+1. Validates environment and required files
+2. Generates raw positive metadata for baby_cry, gun, and snore
+3. Generates raw negative metadata for all three sound types
+4. Creates 1-second segmented positive metadata
+5. Creates 1-second segmented negative metadata
+6. Displays summary of generated files
+
 ## Example Results
 
 ### Target Sound Statistics (by Duration)
@@ -147,16 +216,34 @@ target_name = 'gun'
 | Cap gun | /m/073cg4 | 310 | 0.34 hours | 0.018% |
 | Snort | /m/07q0yl5 | 375 | 0.11 hours | 0.006% |
 
-### Sample Output Structure
+### Complete Output Structure
 
 ```
 meta/baby_cry/
-├── baby_cry_nov_audioset_train_strong.tsv     # 64 events
-├── baby_cry_ov_audioset_train_strong.tsv      # 1,703 events
-├── baby_cry_nov_audioset_eval_strong.tsv      # 21 events
-├── baby_cry_ov_audioset_eval_strong.tsv       # 180 events
-├── baby_cry_nov_audioset_eval_strong_framed_posneg.tsv  # 64 events
-└── baby_cry_ov_audioset_eval_strong_framed_posneg.tsv   # 259 events
+├── raw/
+│   ├── pos/                        # Raw positive labels
+│   │   ├── baby_cry_nov_audioset_train_strong.tsv         # 64 events
+│   │   ├── baby_cry_ov_audioset_train_strong.tsv          # 1,703 events
+│   │   ├── baby_cry_nov_audioset_eval_strong.tsv          # 21 events
+│   │   ├── baby_cry_ov_audioset_eval_strong.tsv           # 180 events
+│   │   ├── baby_cry_nov_audioset_eval_strong_framed_posneg.tsv  # 64 events
+│   │   └── baby_cry_ov_audioset_eval_strong_framed_posneg.tsv   # 259 events
+│   └── neg_strong/                 # Raw negative labels
+│       ├── baby_cry_audioset_train_strong.tsv             # 928,463 events
+│       ├── baby_cry_audioset_eval_strong.tsv              # 138,753 events
+│       └── baby_cry_audioset_eval_strong_framed_posneg.tsv # 298,881 events
+└── seg1s/                          # 1-second segmented data
+    ├── pos/                        # Segmented positive labels
+    │   ├── baby_cry_nov_audioset_train_strong.tsv         # 108 segments
+    │   ├── baby_cry_ov_audioset_train_strong.tsv          # 2,947 segments
+    │   ├── baby_cry_nov_audioset_eval_strong.tsv          # 39 segments
+    │   ├── baby_cry_ov_audioset_eval_strong.tsv           # 363 segments
+    │   ├── baby_cry_nov_audioset_eval_strong_framed_posneg.tsv  # 64 segments
+    │   └── baby_cry_ov_audioset_eval_strong_framed_posneg.tsv   # 259 segments
+    └── neg_strong/                 # Segmented negative labels
+        ├── baby_cry_audioset_train_strong.tsv             # 2,429,966 segments
+        ├── baby_cry_audioset_eval_strong.tsv              # 398,338 segments
+        └── baby_cry_audioset_eval_strong_framed_posneg.tsv # 298,881 segments
 ```
 
 ## File Formats
