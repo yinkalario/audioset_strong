@@ -56,11 +56,17 @@ def get_segments_with_target_labels(df: pd.DataFrame, target_labels: List[str]) 
 
 def extract_negative_samples(df: pd.DataFrame, target_labels: List[str]) -> pd.DataFrame:
     """Extract all samples from segments that do NOT contain target labels."""
+    has_present_column = 'present' in df.columns
+
     # Get segments that contain target labels
     positive_segments = get_segments_with_target_labels(df, target_labels)
 
     # Filter out all events from segments that contain target labels
     negative_df = df[~df['segment_id'].isin(positive_segments)].copy()
+
+    # For framed_posneg files, only keep PRESENT events (NOT_PRESENT is meaningless)
+    if has_present_column:
+        negative_df = negative_df[negative_df['present'] == 'PRESENT'].copy()
 
     print(f"  Total segments in dataset: {df['segment_id'].nunique()}")
     print(f"  Segments with target labels: {len(positive_segments)}")
