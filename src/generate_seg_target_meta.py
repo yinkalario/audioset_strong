@@ -152,7 +152,7 @@ def process_sound_type(sound_type: str, meta_dir: str, clip_length: float):
     input_dir = Path(meta_dir) / sound_type / 'raw' / 'pos'
 
     # Output directory (segmented clips)
-    output_dir = Path(meta_dir) / sound_type / f'clip{int(clip_length)}s'
+    output_dir = Path(meta_dir) / sound_type / f'clip{int(clip_length)}s' / 'pos'
 
     if not input_dir.exists():
         print(f"  Warning: Input directory not found: {input_dir}")
