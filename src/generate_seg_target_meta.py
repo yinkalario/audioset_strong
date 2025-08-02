@@ -152,7 +152,7 @@ def process_sound_type(sound_type: str, meta_dir: str, clip_length: float):
     input_dir = Path(meta_dir) / sound_type / 'raw' / 'pos'
 
     # Output directory (segmented clips)
-    output_dir = Path(meta_dir) / sound_type / f'clip{int(clip_length)}s' / 'pos'
+    output_dir = Path(meta_dir) / sound_type / f'seg{int(clip_length)}s' / 'pos'
 
     if not input_dir.exists():
         print(f"  Warning: Input directory not found: {input_dir}")
@@ -170,9 +170,8 @@ def process_sound_type(sound_type: str, meta_dir: str, clip_length: float):
         input_path = input_dir / input_filename
 
         # Generate output filename
-        # Convert from: baby_cry_ov_audioset_train_strong.tsv
-        # To: clip1s_baby_cry_ov_audioset_train_strong.tsv
-        output_filename = f"clip{int(clip_length)}s_{input_filename}"
+        # Keep original filename: baby_cry_ov_audioset_train_strong.tsv
+        output_filename = input_filename
         output_path = output_dir / output_filename
 
         # Process the file
