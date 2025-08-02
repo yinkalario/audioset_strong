@@ -30,7 +30,8 @@ audioset_strong/
 │   ├── baby_cry/                   # Baby cry metadata
 │   │   ├── raw/
 │   │   │   ├── pos/                # Raw positive labels
-│   │   │   └── neg_strong/         # Raw negative labels
+│   │   │   ├── neg_strong/         # Raw negative strong labels
+│   │   │   └── neg_weak/           # Raw negative weak labels (10-second segments)
 │   │   └── seg1s/
 │   │       ├── pos/                # 1-second segmented positive labels
 │   │       └── neg_strong/         # 1-second segmented negative labels
@@ -38,7 +39,8 @@ audioset_strong/
 │   └── snore/                      # Snore sound metadata (same structure)
 ├── src/                            # Source code
 │   ├── generate_raw_target_meta.py    # Extract raw positive metadata
-│   ├── generate_raw_neg_meta.py       # Extract raw negative metadata
+│   ├── generate_raw_neg_meta.py       # Extract raw negative strong metadata
+│   ├── generate_raw_neg_weak_meta.py  # Extract raw negative weak metadata
 │   ├── generate_seg_target_meta.py    # Generate segmented positive metadata
 │   ├── generate_seg_neg_meta.py       # Generate segmented negative metadata
 │   └── analyze_label_distribution.py  # Distribution analysis script
@@ -82,9 +84,10 @@ bash scripts/process_audioset_metadata.sh
 
 This script will automatically:
 1. Generate raw positive metadata for baby_cry, gun, and snore sounds
-2. Generate raw negative metadata for all three sound types
-3. Generate 1-second segmented positive metadata
-4. Generate 1-second segmented negative metadata
+2. Generate raw negative strong metadata for all three sound types
+3. Generate raw negative weak metadata for all three sound types
+4. Generate 1-second segmented positive metadata
+5. Generate 1-second segmented negative metadata
 
 ### Manual Processing (Advanced)
 
@@ -115,15 +118,23 @@ target_name = 'snore'
 python src/generate_raw_target_meta.py --input-dir meta --output-dir meta
 ```
 
-#### 2. Extract Raw Negative Metadata
+#### 2. Extract Raw Negative Strong Metadata
 
-Generate negative samples (clips without target sounds):
+Generate negative strong samples (clips without target sounds):
 
 ```bash
 python src/generate_raw_neg_meta.py --input-dir meta --output-dir meta
 ```
 
-#### 3. Generate Segmented Positive Metadata
+#### 3. Extract Raw Negative Weak Metadata
+
+Generate negative weak samples (10-second segments without target sounds):
+
+```bash
+python src/generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
+```
+
+#### 4. Generate Segmented Positive Metadata
 
 Create 1-second segments from positive samples:
 
@@ -131,7 +142,7 @@ Create 1-second segments from positive samples:
 python src/generate_seg_target_meta.py
 ```
 
-#### 4. Generate Segmented Negative Metadata
+#### 5. Generate Segmented Negative Metadata
 
 Create 1-second segments from negative samples:
 
@@ -139,7 +150,7 @@ Create 1-second segments from negative samples:
 python src/generate_seg_neg_meta.py
 ```
 
-#### 5. Analyze Label Distribution (Optional)
+#### 6. Analyze Label Distribution (Optional)
 
 Analyze the distribution of all labels in the dataset by total duration:
 
@@ -198,10 +209,11 @@ bash scripts/process_audioset_metadata.sh
 **What it does:**
 1. Validates environment and required files
 2. Generates raw positive metadata for baby_cry, gun, and snore
-3. Generates raw negative metadata for all three sound types
-4. Creates 1-second segmented positive metadata
-5. Creates 1-second segmented negative metadata
-6. Displays summary of generated files
+3. Generates raw negative strong metadata for all three sound types
+4. Generates raw negative weak metadata for all three sound types
+5. Creates 1-second segmented positive metadata
+6. Creates 1-second segmented negative metadata
+7. Displays summary of generated files
 
 ## Example Results
 
@@ -228,10 +240,14 @@ meta/baby_cry/
 │   │   ├── baby_cry_ov_audioset_eval_strong.tsv           # 180 events
 │   │   ├── baby_cry_nov_audioset_eval_strong_framed_posneg.tsv  # 64 events
 │   │   └── baby_cry_ov_audioset_eval_strong_framed_posneg.tsv   # 259 events
-│   └── neg_strong/                 # Raw negative labels
-│       ├── baby_cry_audioset_train_strong.tsv             # 928,463 events
-│       ├── baby_cry_audioset_eval_strong.tsv              # 138,753 events
-│       └── baby_cry_audioset_eval_strong_framed_posneg.tsv # 298,881 events
+│   ├── neg_strong/                 # Raw negative strong labels
+│   │   ├── baby_cry_audioset_train_strong.tsv             # 928,463 events
+│   │   ├── baby_cry_audioset_eval_strong.tsv              # 138,753 events
+│   │   └── baby_cry_audioset_eval_strong_framed_posneg.tsv # 298,881 events
+│   └── neg_weak/                   # Raw negative weak labels (10-second segments)
+│       ├── baby_cry_neg_weak_unbalanced_train_segments.csv # 2,039,519 segments
+│       ├── baby_cry_neg_weak_balanced_train_segments.csv  # 22,100 segments
+│       └── baby_cry_neg_weak_eval_segments.csv            # 20,311 segments
 └── seg1s/                          # 1-second segmented data
     ├── pos/                        # Segmented positive labels
     │   ├── baby_cry_nov_audioset_train_strong.tsv         # 108 segments

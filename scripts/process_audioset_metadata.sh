@@ -73,12 +73,12 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     print_success "Generated raw positive metadata for $sound_type"
 done
 
-# Step 2: Generate raw negative metadata for each sound type
-print_step "Step 2: Generating Raw Negative Metadata"
+# Step 2: Generate raw negative strong metadata for each sound type
+print_step "Step 2: Generating Raw Negative Strong Metadata"
 
 for sound_type in "${SOUND_TYPES[@]}"; do
-    print_step "Processing $sound_type negative labels"
-    
+    print_step "Processing $sound_type negative strong labels"
+
     # Update the target configuration in the script
     case $sound_type in
         "baby_cry")
@@ -94,18 +94,44 @@ for sound_type in "${SOUND_TYPES[@]}"; do
             sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_neg_meta.py
             ;;
     esac
-    
+
     python3 src/generate_raw_neg_meta.py --input-dir meta --output-dir meta
-    print_success "Generated raw negative metadata for $sound_type"
+    print_success "Generated raw negative strong metadata for $sound_type"
 done
 
-# Step 3: Generate segmented positive metadata
-print_step "Step 3: Generating Segmented Positive Metadata"
+# Step 3: Generate raw negative weak metadata for each sound type
+print_step "Step 3: Generating Raw Negative Weak Metadata"
+
+for sound_type in "${SOUND_TYPES[@]}"; do
+    print_step "Processing $sound_type negative weak labels"
+
+    # Update the target configuration in the script
+    case $sound_type in
+        "baby_cry")
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_raw_neg_weak_meta.py
+            ;;
+        "gun")
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_raw_neg_weak_meta.py
+            ;;
+        "snore")
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_neg_weak_meta.py
+            ;;
+    esac
+
+    python3 src/generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
+    print_success "Generated raw negative weak metadata for $sound_type"
+done
+
+# Step 4: Generate segmented positive metadata
+print_step "Step 4: Generating Segmented Positive Metadata"
 python3 src/generate_seg_target_meta.py
 print_success "Generated segmented positive metadata for all sound types"
 
-# Step 4: Generate segmented negative metadata
-print_step "Step 4: Generating Segmented Negative Metadata"
+# Step 5: Generate segmented negative metadata
+print_step "Step 5: Generating Segmented Negative Metadata"
 python3 src/generate_seg_neg_meta.py
 print_success "Generated segmented negative metadata for all sound types"
 
@@ -124,7 +150,8 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     echo "├── $sound_type/"
     echo "│   ├── raw/"
     echo "│   │   ├── pos/          # Raw positive labels"
-    echo "│   │   └── neg_strong/   # Raw negative labels"
+    echo "│   │   ├── neg_strong/   # Raw negative strong labels"
+    echo "│   │   └── neg_weak/     # Raw negative weak labels (10-second segments)"
     echo "│   └── seg1s/"
     echo "│       ├── pos/          # 1-second segmented positive labels"
     echo "│       └── neg_strong/   # 1-second segmented negative labels"
