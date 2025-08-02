@@ -7,10 +7,10 @@ separating them into overlapped and non-overlapped categories based on temporal 
 with other sound events.
 """
 
-import os
 import pandas as pd
 from typing import List, Tuple, Dict
 import argparse
+from pathlib import Path
 
 # Target labels and names configuration
 target_labels = ['/t/dd00002']  # Baby cry, infant cry
@@ -25,7 +25,7 @@ target_name = 'baby_cry'
 
 def load_tsv_data(file_path: str) -> pd.DataFrame:
     """Load TSV data from file."""
-    if not os.path.exists(file_path):
+    if not Path(file_path).exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
     # Determine the number of columns based on the file
@@ -105,7 +105,7 @@ def categorize_target_events(df: pd.DataFrame, target_labels: List[str]) -> Tupl
     return non_overlapped, overlapped
 
 
-def save_metadata(events: List[Dict], output_path: str, has_present_column: bool = False):
+def save_metadata(events: List[Dict], output_path, has_present_column: bool = False):
     """Save events to TSV file. Skip saving if no events."""
     if not events:
         print(f"No events to save for {output_path} - skipping file creation")
@@ -122,7 +122,7 @@ def save_metadata(events: List[Dict], output_path: str, has_present_column: bool
     df = df[columns]
 
     # Create output directory if it doesn't exist
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     # Save with header
     with open(output_path, 'w') as f:
@@ -151,15 +151,15 @@ def process_file(input_file: str, target_labels: List[str], target_name: str, ou
     non_overlapped, overlapped = categorize_target_events(df, target_labels)
 
     # Determine file type and generate output filenames
-    base_name = os.path.basename(input_file).replace('.tsv', '')
+    base_name = Path(input_file).stem
     has_present_column = 'framed_posneg' in input_file
 
-    # Create target-specific output directory
-    target_output_dir = os.path.join(output_dir, target_name)
+    # Create target-specific output directory with raw/pos structure
+    target_output_dir = Path(output_dir) / target_name / 'raw' / 'pos'
 
     # Generate output paths
-    nov_output = os.path.join(target_output_dir, f"{target_name}_nov_{base_name}.tsv")
-    ov_output = os.path.join(target_output_dir, f"{target_name}_ov_{base_name}.tsv")
+    nov_output = target_output_dir / f"{target_name}_nov_{base_name}.tsv"
+    ov_output = target_output_dir / f"{target_name}_ov_{base_name}.tsv"
 
     # Save results
     save_metadata(non_overlapped, nov_output, has_present_column)
@@ -201,9 +201,9 @@ def main():
 
     # Process each input file
     for input_file in input_files:
-        input_path = os.path.join(input_dir, input_file)
-        if os.path.exists(input_path):
-            process_file(input_path, target_labels, target_name, output_dir)
+        input_path = Path(input_dir) / input_file
+        if input_path.exists():
+            process_file(str(input_path), target_labels, target_name, output_dir)
         else:
             print(f"Warning: Input file not found: {input_path}")
 
