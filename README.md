@@ -39,10 +39,10 @@ audioset_strong/
 │   └── snore/                      # Snore sound metadata (same structure)
 ├── src/                            # Source code
 │   ├── generate_raw_target_meta.py    # Extract raw positive metadata
-│   ├── generate_raw_neg_meta.py       # Extract raw negative strong metadata
+│   ├── generate_raw_neg_strong_meta.py # Extract raw negative strong metadata
 │   ├── generate_raw_neg_weak_meta.py  # Extract raw negative weak metadata
 │   ├── generate_seg_target_meta.py    # Generate segmented positive metadata
-│   ├── generate_seg_neg_meta.py       # Generate segmented negative metadata
+│   ├── generate_seg_neg_strong_meta.py # Generate segmented negative metadata
 │   └── analyze_label_distribution.py  # Distribution analysis script
 ├── out/                            # Analysis outputs (ignored by git)
 │   ├── label_distribution_analysis.png
@@ -123,7 +123,7 @@ python src/generate_raw_target_meta.py --input-dir meta --output-dir meta
 Generate negative strong samples (clips without target sounds):
 
 ```bash
-python src/generate_raw_neg_meta.py --input-dir meta --output-dir meta
+python src/generate_raw_neg_strong_meta.py --input-dir meta --output-dir meta
 ```
 
 #### 3. Extract Raw Negative Weak Metadata
@@ -147,7 +147,7 @@ python src/generate_seg_target_meta.py
 Create 1-second segments from negative samples:
 
 ```bash
-python src/generate_seg_neg_meta.py
+python src/generate_seg_neg_strong_meta.py
 ```
 
 #### 6. Analyze Label Distribution (Optional)

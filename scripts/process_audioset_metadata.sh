@@ -82,20 +82,20 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     # Update the target configuration in the script
     case $sound_type in
         "baby_cry")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_raw_neg_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_raw_neg_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_raw_neg_strong_meta.py
             ;;
         "gun")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_raw_neg_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_raw_neg_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_raw_neg_strong_meta.py
             ;;
         "snore")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_raw_neg_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_neg_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_neg_strong_meta.py
             ;;
     esac
 
-    python3 src/generate_raw_neg_meta.py --input-dir meta --output-dir meta
+    python3 src/generate_raw_neg_strong_meta.py --input-dir meta --output-dir meta
     print_success "Generated raw negative strong metadata for $sound_type"
 done
 
@@ -132,7 +132,7 @@ print_success "Generated segmented positive metadata for all sound types"
 
 # Step 5: Generate segmented negative metadata
 print_step "Step 5: Generating Segmented Negative Metadata"
-python3 src/generate_seg_neg_meta.py
+python3 src/generate_seg_neg_strong_meta.py
 print_success "Generated segmented negative metadata for all sound types"
 
 # Clean up backup files
