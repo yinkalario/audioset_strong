@@ -46,7 +46,8 @@ def check_temporal_overlap(target_start: float, target_end: float,
     return not (target_end <= other_start or target_start >= other_end)
 
 
-def categorize_target_events(df: pd.DataFrame, target_labels: List[str]) -> Tuple[List[Dict], List[Dict]]:
+def categorize_target_events(df: pd.DataFrame,
+                             target_labels: List[str]) -> Tuple[List[Dict], List[Dict]]:
     """
     Categorize target sound events into overlapped and non-overlapped based on
     temporal overlap with other sound events in the same segment.
