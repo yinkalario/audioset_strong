@@ -43,11 +43,15 @@ audioset_strong/
 │   ├── generate_raw_neg_weak_meta.py  # Extract raw negative weak metadata
 │   ├── generate_seg_target_meta.py    # Generate segmented positive metadata
 │   ├── generate_seg_neg_strong_meta.py # Generate segmented negative metadata
-│   └── analyze_label_distribution.py  # Distribution analysis script
+│   ├── analyze_strong_label_distribution.py # Strong label distribution analysis
+│   └── analyze_weak_label_distribution.py   # Weak label distribution analysis
 ├── out/                            # Analysis outputs (ignored by git)
-│   ├── label_distribution_analysis.png
-│   ├── top_labels_detailed.png
-│   └── label_distribution_stats.csv
+│   ├── label_distribution_analysis.png        # Strong label analysis
+│   ├── weak_label_distribution_analysis.png   # Weak label analysis
+│   ├── top_labels_detailed.png                # Strong label details
+│   ├── top_weak_labels_detailed.png           # Weak label details
+│   ├── label_distribution_stats.csv           # Strong label statistics
+│   └── weak_label_distribution_stats.csv      # Weak label statistics
 ├── scripts/                        # Utility scripts
 │   ├── create_env.sh               # Environment setup
 │   └── process_audioset_metadata.sh  # Complete processing pipeline
@@ -152,16 +156,23 @@ python src/generate_seg_neg_strong_meta.py
 
 #### 6. Analyze Label Distribution (Optional)
 
-Analyze the distribution of all labels in the dataset by total duration:
-
+**Strong Label Distribution** (by duration):
 ```bash
-python src/analyze_label_distribution.py --train-file meta/audioset_train_strong.tsv --mid-to-display meta/mid_to_display_name.tsv
+python src/analyze_strong_label_distribution.py --train-file meta/audioset_train_strong.tsv --mid-to-display meta/mid_to_display_name.tsv
+```
+
+**Weak Label Distribution** (by occurrence count):
+```bash
+python src/analyze_weak_label_distribution.py --train-file meta/unbalanced_train_segments.csv --mid-to-display meta/mid_to_display_name.tsv
 ```
 
 **Output**:
-- `out/label_distribution_analysis.png` - Comprehensive 6-panel analysis
-- `out/top_labels_detailed.png` - Detailed visualization of top labels
-- `out/label_distribution_stats.csv` - Complete statistics for all labels
+- `out/label_distribution_analysis.png` - Strong label analysis (6-panel)
+- `out/weak_label_distribution_analysis.png` - Weak label analysis (6-panel)
+- `out/top_labels_detailed.png` - Detailed strong labels visualization
+- `out/top_weak_labels_detailed.png` - Detailed weak labels visualization
+- `out/label_distribution_stats.csv` - Strong label statistics
+- `out/weak_label_distribution_stats.csv` - Weak label statistics
 
 ## Key Features
 
@@ -213,7 +224,8 @@ bash scripts/process_audioset_metadata.sh
 4. Generates raw negative weak metadata for all three sound types
 5. Creates 1-second segmented positive metadata
 6. Creates 1-second segmented negative metadata
-7. Displays summary of generated files
+7. Generates strong and weak label distribution analyses
+8. Displays summary of generated files
 
 ## Example Results
 

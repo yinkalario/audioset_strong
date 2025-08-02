@@ -15,8 +15,8 @@ from pathlib import Path
 target_labels = ['/m/01d3sd', '/m/07q0yl5']  # Snoring, Snort
 target_name = 'snore'
 
-# target_labels = ['/m/01d3sd', '/m/07q0yl5']  # Snoring, Snort
-# target_name = 'snore'
+# target_labels = ['/t/dd00002']  # Baby cry, infant cry
+# target_name = 'baby_cry'
 
 # target_labels = ['/m/032s66', '/m/04zjc', '/m/073cg4']  # Gunshot/gunfire, Machine gun, Cap gun
 # target_name = 'gun'
