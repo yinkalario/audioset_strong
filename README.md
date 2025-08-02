@@ -46,15 +46,16 @@ audioset_strong/
 │   ├── analyze_strong_label_distribution.py # Strong label distribution analysis
 │   └── analyze_weak_label_distribution.py   # Weak label distribution analysis
 ├── out/                            # Analysis outputs (ignored by git)
-│   ├── label_distribution_analysis.png        # Strong label analysis
+│   ├── strong_label_distribution_analysis.png # Strong label analysis
 │   ├── weak_label_distribution_analysis.png   # Weak label analysis
-│   ├── top_labels_detailed.png                # Strong label details
+│   ├── top_strong_labels_detailed.png         # Strong label details
 │   ├── top_weak_labels_detailed.png           # Weak label details
-│   ├── label_distribution_stats.csv           # Strong label statistics
+│   ├── strong_label_distribution_stats.csv    # Strong label statistics
 │   └── weak_label_distribution_stats.csv      # Weak label statistics
 ├── scripts/                        # Utility scripts
 │   ├── create_env.sh               # Environment setup
-│   └── process_audioset_metadata.sh  # Complete processing pipeline
+│   ├── process_audioset_metadata.sh  # Complete processing pipeline
+│   └── analyze_label_distributions.sh # Label distribution analysis
 └── requirements.txt               # Python dependencies
 ```
 
@@ -84,6 +85,12 @@ For processing all sound types automatically, use the provided bash script:
 
 ```bash
 bash scripts/process_audioset_metadata.sh
+```
+
+For analyzing label distributions (both strong and weak), use:
+
+```bash
+bash scripts/analyze_label_distributions.sh
 ```
 
 This script will automatically:
@@ -166,12 +173,17 @@ python src/analyze_strong_label_distribution.py --train-file meta/audioset_train
 python src/analyze_weak_label_distribution.py --train-file meta/unbalanced_train_segments.csv --mid-to-display meta/mid_to_display_name.tsv
 ```
 
+**Quick Analysis** (both strong and weak):
+```bash
+bash scripts/analyze_label_distributions.sh
+```
+
 **Output**:
-- `out/label_distribution_analysis.png` - Strong label analysis (6-panel)
+- `out/strong_label_distribution_analysis.png` - Strong label analysis (6-panel)
 - `out/weak_label_distribution_analysis.png` - Weak label analysis (6-panel)
-- `out/top_labels_detailed.png` - Detailed strong labels visualization
+- `out/top_strong_labels_detailed.png` - Detailed strong labels visualization
 - `out/top_weak_labels_detailed.png` - Detailed weak labels visualization
-- `out/label_distribution_stats.csv` - Strong label statistics
+- `out/strong_label_distribution_stats.csv` - Strong label statistics
 - `out/weak_label_distribution_stats.csv` - Weak label statistics
 
 ## Key Features

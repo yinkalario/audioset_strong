@@ -96,7 +96,7 @@ def analyze_label_distribution(train_file: str, mid_to_display_path: str):
 
     # Create output directory and save detailed statistics
     os.makedirs('out', exist_ok=True)
-    output_file = 'out/label_distribution_stats.csv'
+    output_file = 'out/strong_label_distribution_stats.csv'
     label_stats.to_csv(output_file, index=False)
     print(f"\nDetailed statistics saved to: {output_file}")
     
@@ -201,7 +201,7 @@ def create_distribution_plots(label_stats: pd.DataFrame):
     os.makedirs('out', exist_ok=True)
 
     # Save the plot
-    output_plot = 'out/label_distribution_analysis.png'
+    output_plot = 'out/strong_label_distribution_analysis.png'
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     print(f"Distribution plots saved to: {output_plot}")
     plt.close()
@@ -261,7 +261,7 @@ def create_detailed_top_labels_plot(label_stats: pd.DataFrame):
     os.makedirs('out', exist_ok=True)
 
     # Save the detailed plot
-    output_plot = 'out/top_labels_detailed.png'
+    output_plot = 'out/top_strong_labels_detailed.png'
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     print(f"Detailed top labels plot saved to: {output_plot}")
     plt.close()
