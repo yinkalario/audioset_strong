@@ -269,25 +269,52 @@ def create_detailed_top_labels_plot(label_stats: pd.DataFrame):
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(description='Analyze AudioSet label distribution')
+    parser = argparse.ArgumentParser(description='Analyze AudioSet strong label distribution')
     parser.add_argument('--train-file', default='meta/audioset_train_strong.tsv',
                         help='Path to training TSV file')
+    parser.add_argument('--eval-file', default='meta/audioset_eval_strong.tsv',
+                        help='Path to evaluation TSV file')
+    parser.add_argument('--eval-framed', default='meta/audioset_eval_strong_framed_posneg.tsv',
+                        help='Path to evaluation framed TSV file')
     parser.add_argument('--mid-to-display', default='meta/mid_to_display_name.tsv',
                         help='Path to MID to display name mapping file')
     args = parser.parse_args()
-    
-    if not os.path.exists(args.train_file):
-        print(f"Error: Training file not found: {args.train_file}")
+
+    # Define input files
+    input_files = {
+        'train': args.train_file,
+        'eval': args.eval_file,
+        'eval_framed': args.eval_framed
+    }
+
+    # Check which files exist
+    existing_files = {}
+    for name, file_path in input_files.items():
+        if os.path.exists(file_path):
+            existing_files[name] = file_path
+        else:
+            print(f"Warning: File not found: {file_path}")
+
+    if not existing_files:
+        print("Error: No valid input files found!")
         return
-    
+
     if not os.path.exists(args.mid_to_display):
-        print(f"Error: MID to display name file not found: {args.mid_to_display}")
-        return
-    
-    print("AudioSet Label Distribution Analysis")
+        print(f"Warning: MID to display name file not found: {args.mid_to_display}")
+
+    print("AudioSet Strong Label Distribution Analysis")
     print("=" * 50)
-    
-    label_stats = analyze_label_distribution(args.train_file, args.mid_to_display)
+    print(f"Analyzing {len(existing_files)} datasets: {list(existing_files.keys())}")
+
+    # Analyze each dataset
+    all_stats = {}
+    for dataset_name, file_path in existing_files.items():
+        print(f"\nAnalyzing {dataset_name} dataset...")
+        stats = analyze_label_distribution(file_path, args.mid_to_display)
+        all_stats[dataset_name] = stats
+        print(f"Completed analysis for {dataset_name}")
+
+    print(f"\nAnalysis complete for all {len(all_stats)} datasets!")
     
     print("\nAnalysis complete!")
     print(f"Total unique labels: {len(label_stats)}")

@@ -139,10 +139,21 @@ print_success "Generated segmented negative metadata for all sound types"
 print_step "Optional: Generating Label Distribution Analyses"
 print_warning "Generating strong and weak label distribution analyses..."
 
-python3 src/analyze_strong_label_distribution.py --train-file meta/audioset_train_strong.tsv --mid-to-display meta/mid_to_display_name.tsv --output-dir out
+# Use the correct analysis script for strong labels
+python3 src/analyze_single_strong_dataset.py \
+    --input-file meta/audioset_train_strong.tsv \
+    --output-prefix out/strong_label_distribution_train \
+    --dataset-name "Train" \
+    --mid-to-display meta/mid_to_display_name.tsv
 print_success "Generated strong label distribution analysis"
 
-python3 src/analyze_weak_label_distribution.py --train-file meta/unbalanced_train_segments.csv --mid-to-display meta/mid_to_display_name.tsv --output-dir out
+# Use the correct arguments for weak labels
+python3 src/analyze_weak_label_distribution.py \
+    --unbalanced-train meta/unbalanced_train_segments.csv \
+    --balanced-train meta/balanced_train_segments.csv \
+    --eval-file meta/eval_segments.csv \
+    --mid-to-display meta/mid_to_display_name.tsv \
+    --output-dir out
 print_success "Generated weak label distribution analysis"
 
 # Clean up backup files

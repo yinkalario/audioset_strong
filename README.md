@@ -47,15 +47,17 @@ audioset_strong/
 │   └── analyze_weak_label_distribution.py   # Weak label distribution analysis
 ├── out/                            # Analysis outputs (ignored by git)
 │   ├── strong_label_distribution_analysis.png # Strong label analysis
-│   ├── weak_label_distribution_analysis.png   # Weak label analysis
+│   ├── weak_label_distribution_analysis.png   # Weak label analysis (combined)
+│   ├── weak_label_distribution_analysis_{dataset}.png # Individual dataset analysis
 │   ├── top_strong_labels_detailed.png         # Strong label details
 │   ├── top_weak_labels_detailed.png           # Weak label details
 │   ├── strong_label_distribution_stats.csv    # Strong label statistics
-│   └── weak_label_distribution_stats.csv      # Weak label statistics
+│   ├── weak_label_distribution_stats.csv      # Weak label statistics (combined)
+│   └── weak_label_distribution_stats_{dataset}.csv # Individual dataset statistics
 ├── scripts/                        # Utility scripts
 │   ├── create_env.sh               # Environment setup
 │   ├── process_audioset_metadata.sh  # Complete processing pipeline
-│   └── analyze_label_distributions.sh # Label distribution analysis
+│   └── analyze_all_datasets.sh    # Complete dataset analysis (all 6 datasets)
 └── requirements.txt               # Python dependencies
 ```
 
@@ -173,18 +175,29 @@ python src/analyze_strong_label_distribution.py --train-file meta/audioset_train
 python src/analyze_weak_label_distribution.py --train-file meta/unbalanced_train_segments.csv --mid-to-display meta/mid_to_display_name.tsv
 ```
 
-**Quick Analysis** (both strong and weak):
+**Complete Dataset Analysis** (analyze all 6 datasets separately):
 ```bash
-bash scripts/analyze_label_distributions.sh
+bash scripts/analyze_all_datasets.sh
 ```
 
-**Output**:
-- `out/strong_label_distribution_analysis.png` - Strong label analysis (6-panel)
-- `out/weak_label_distribution_analysis.png` - Weak label analysis (6-panel)
-- `out/top_strong_labels_detailed.png` - Detailed strong labels visualization
-- `out/top_weak_labels_detailed.png` - Detailed weak labels visualization
-- `out/strong_label_distribution_stats.csv` - Strong label statistics
-- `out/weak_label_distribution_stats.csv` - Weak label statistics
+This analyzes all datasets individually:
+- **Strong labels**: audioset_train_strong.tsv, audioset_eval_strong.tsv, audioset_eval_strong_framed_posneg.tsv
+- **Weak labels**: balanced_train_segments.csv, unbalanced_train_segments.csv, eval_segments.csv
+
+**Output** (6 separate analyses):
+
+**Strong Label Analyses** (by duration):
+- `out/strong_label_distribution_{dataset}_analysis.png` - 6-panel analysis for each dataset
+- `out/strong_label_distribution_{dataset}_detailed.png` - Detailed visualization for each dataset
+- `out/strong_label_distribution_{dataset}_stats.csv` - Statistics for each dataset
+
+**Weak Label Analyses** (by occurrence count):
+- `out/weak_label_distribution_analysis_{dataset}.png` - 4-panel analysis for each dataset
+- `out/weak_label_distribution_stats_{dataset}.csv` - Statistics for each dataset
+
+Where `{dataset}` is:
+- **Strong**: train, eval, eval_framed (eval_framed filters for PRESENT events only)
+- **Weak**: balanced_train, unbalanced_train, eval
 
 ## Key Features
 
@@ -236,8 +249,10 @@ bash scripts/process_audioset_metadata.sh
 4. Generates raw negative weak metadata for all three sound types
 5. Creates 1-second segmented positive metadata
 6. Creates 1-second segmented negative metadata
-7. Generates strong and weak label distribution analyses
+7. Generates basic label distribution analyses (train dataset only)
 8. Displays summary of generated files
+
+**Note**: For complete analysis of all 6 datasets separately, use `bash scripts/analyze_all_datasets.sh`
 
 ## Example Results
 
