@@ -1,10 +1,37 @@
 #!/usr/bin/env python3
 """
-Generate raw negative weak metadata for target sound types.
+AudioSet Weak Label Negative Sample Generator
 
-This script extracts negative weak labels (10-second clips that do NOT contain target sounds)
-from the original AudioSet weak labeling files (unbalanced_train_segments.csv, 
-balanced_train_segments.csv, eval_segments.csv) and organizes them by sound type.
+This script generates negative metadata for target sound types by extracting 10-second
+audio segments that do NOT contain the target sounds from AudioSet weak labeling files.
+Weak labels provide segment-level annotations without precise temporal boundaries.
+
+Features:
+- Processes AudioSet weak labeling CSV files (unbalanced_train, balanced_train, eval)
+- Identifies 10-second segments without target sound labels
+- Extracts negative samples for balanced machine learning training
+- Handles multiple target labels per sound type
+- Generates organized negative metadata for each target sound type
+
+Process:
+1. Load AudioSet weak labeling CSV files
+2. Parse positive_labels column to identify target sounds
+3. Extract segments that do NOT contain any target labels
+4. Save negative samples with segment information
+
+Input Files:
+- unbalanced_train_segments.csv (2M+ segments)
+- balanced_train_segments.csv (~22K segments)
+- eval_segments.csv (~20K segments)
+
+Output Structure:
+- meta/{target_name}/raw/neg_weak/{target_name}_{dataset}_segments.csv
+
+Usage:
+    python generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
+
+Author: Yin Cao
+Date: 2025
 """
 
 import pandas as pd

@@ -1,9 +1,39 @@
 #!/usr/bin/env python3
 """
-Analyze a single strong label dataset file.
+AudioSet Strong Label Dataset Analyzer
 
-This script analyzes one strong labeling TSV file and generates distribution plots.
-It properly handles the framed_posneg format by filtering for PRESENT events only.
+This script provides comprehensive analysis of individual AudioSet strong labeling
+datasets, generating detailed visualizations and statistics for label distribution
+analysis. It supports all AudioSet strong label formats including the framed_posneg
+format with proper PRESENT/NOT_PRESENT filtering.
+
+Features:
+- Analyzes individual strong labeling TSV files separately
+- Calculates label distributions by total duration (not event count)
+- Handles framed_posneg format with PRESENT event filtering
+- Generates comprehensive 6-panel analysis visualizations
+- Creates detailed top-N label plots with duration information
+- Exports complete statistics to CSV for further analysis
+- Supports label ID to display name mapping
+
+Analysis Components:
+- Duration-based label distribution (primary metric)
+- Top labels by total duration
+- Cumulative duration coverage analysis
+- Duration distribution histograms
+- Label frequency band analysis
+- Detailed top-N label visualization
+
+Supported Formats:
+- Standard strong labels: segment_id, start_time, end_time, label
+- Framed posneg: segment_id, start_time, end_time, label, present
+
+Usage:
+    python analyze_single_strong_dataset.py --input-file dataset.tsv
+           --output-prefix out/analysis --dataset-name "Train"
+
+Author: Yin Cao
+Date: 2025
 """
 
 import pandas as pd

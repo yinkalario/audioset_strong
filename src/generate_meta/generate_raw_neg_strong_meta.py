@@ -1,9 +1,32 @@
 #!/usr/bin/env python3
 """
-Generate raw negative metadata for target sound types.
+AudioSet Strong Label Negative Sample Generator
 
-This script extracts negative labels (audio clips that do NOT contain target sounds)
-from the original AudioSet strong labeling files and organizes them by sound type.
+This script generates negative metadata for target sound types by extracting audio
+segments that do NOT contain the target sounds from AudioSet strong labeling files.
+These negative samples are essential for training balanced machine learning models.
+
+Features:
+- Identifies segments without target sound labels
+- Extracts all events from negative segments as negative samples
+- Processes multiple AudioSet strong label files (train, eval, eval_framed)
+- Maintains temporal information for precise negative sample extraction
+- Generates organized negative metadata for each target sound type
+
+Process:
+1. Load AudioSet strong label files
+2. Identify segments containing target sounds
+3. Extract all events from segments WITHOUT target sounds
+4. Save negative samples with temporal and label information
+
+Output Structure:
+- meta/{target_name}/raw/neg_strong/{target_name}_{dataset}_strong.tsv
+
+Usage:
+    python generate_raw_neg_strong_meta.py --input-dir meta --output-dir meta
+
+Author: Yin Cao
+Date: 2025
 """
 
 import pandas as pd

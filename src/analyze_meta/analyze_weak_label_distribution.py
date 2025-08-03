@@ -1,9 +1,45 @@
 #!/usr/bin/env python3
 """
-Analyze weak label distribution in AudioSet weak labeling data.
+AudioSet Weak Label Distribution Analyzer
 
-This script analyzes the distribution of labels in AudioSet weak labeling files
-by counting label occurrence frequency (since weak labels don't have precise timing).
+This script provides comprehensive analysis of AudioSet weak labeling datasets,
+focusing on label occurrence frequency and distribution patterns across different
+dataset splits. Weak labels provide segment-level annotations without precise
+temporal boundaries, making occurrence counting the primary analysis metric.
+
+Features:
+- Occurrence-based label distribution analysis (10-second segments)
+- Multi-dataset comparison (unbalanced_train, balanced_train, eval)
+- Individual dataset analysis with separate visualizations
+- Combined cross-dataset distribution analysis
+- Statistical export and reporting capabilities
+- Label ID to display name mapping integration
+
+Analysis Metrics:
+- Label occurrence frequency across datasets
+- Relative distribution percentages
+- Cross-dataset label coverage comparison
+- Top-N label identification and ranking
+- Dataset-specific distribution patterns
+
+Visualization Components:
+- 4-panel comprehensive analysis per dataset
+- Cross-dataset comparison visualizations
+- Top label frequency charts
+- Distribution pattern analysis
+- Individual dataset breakdowns
+
+Dataset Coverage:
+- unbalanced_train_segments.csv (~2M segments)
+- balanced_train_segments.csv (~22K segments)
+- eval_segments.csv (~20K segments)
+
+Usage:
+    python analyze_weak_label_distribution.py --unbalanced-train file1.csv
+           --balanced-train file2.csv --eval-file file3.csv --output-dir out
+
+Author: Yin Cao
+Date: 2025
 """
 
 import pandas as pd

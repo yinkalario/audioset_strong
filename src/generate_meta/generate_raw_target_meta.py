@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
 """
-Generate target sound metadata from AudioSet strong labels.
+AudioSet Strong Label Target Sound Metadata Generator
 
-This script extracts metadata for specific target sound types from AudioSet strong label files,
-separating them into overlapped and non-overlapped categories based on temporal overlap
-with other sound events.
+This script extracts positive metadata for specific target sound types from AudioSet strong
+label datasets. It processes the strong labeling TSV files to identify target sound events
+and categorizes them into overlapped (ov) and non-overlapped (nov) based on temporal
+overlap with other sound events.
+
+Features:
+- Extracts target sound events from AudioSet strong label files
+- Separates overlapped vs non-overlapped events based on temporal analysis
+- Generates structured metadata files for positive sound samples
+- Supports multiple target labels per sound type (e.g., different gun sounds)
+- Creates organized directory structure for downstream processing
+
+Output Structure:
+- meta/{target_name}/raw/pos/{target_name}_{ov/nov}_{dataset}_strong.tsv
+
+Usage:
+    python generate_raw_target_meta.py --input-dir meta --output-dir meta
+
+Author: Yin Cao
+Date: 2025
 """
 
 import pandas as pd

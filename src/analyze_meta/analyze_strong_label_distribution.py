@@ -1,9 +1,42 @@
 #!/usr/bin/env python3
 """
-Analyze label distribution in AudioSet training data.
+AudioSet Strong Label Distribution Analyzer
 
-This script calculates the ratio of each label in audioset_train_strong.tsv
-and generates visualization plots to show the class imbalance.
+This script provides comprehensive analysis of AudioSet strong labeling datasets,
+focusing on label distribution patterns, class imbalance analysis, and temporal
+duration statistics. It generates detailed visualizations and statistical reports
+for understanding dataset characteristics.
+
+Features:
+- Duration-based label distribution analysis (primary metric)
+- Class imbalance visualization and quantification
+- Temporal coverage analysis across all labels
+- Multi-panel comprehensive visualization dashboard
+- Statistical export for further analysis
+- Support for multiple strong label datasets
+- Label ID to display name mapping integration
+
+Analysis Metrics:
+- Total duration per label (seconds and hours)
+- Label frequency and distribution patterns
+- Class imbalance ratios and statistics
+- Cumulative coverage analysis
+- Top-N label detailed breakdowns
+
+Visualization Components:
+- 6-panel comprehensive analysis dashboard
+- Duration distribution histograms
+- Top label rankings with duration metrics
+- Class imbalance visualization
+- Cumulative coverage plots
+- Detailed top-N label analysis
+
+Usage:
+    python analyze_strong_label_distribution.py --train-file dataset.tsv
+           --mid-to-display mapping.tsv
+
+Author: Yin Cao
+Date: 2025
 """
 
 import os
