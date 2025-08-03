@@ -38,13 +38,16 @@ audioset_strong/
 │   ├── gun/                        # Gun sound metadata (same structure)
 │   └── snore/                      # Snore sound metadata (same structure)
 ├── src/                            # Source code
-│   ├── generate_raw_target_meta.py    # Extract raw positive metadata
-│   ├── generate_raw_neg_strong_meta.py # Extract raw negative strong metadata
-│   ├── generate_raw_neg_weak_meta.py  # Extract raw negative weak metadata
-│   ├── generate_seg_target_meta.py    # Generate segmented positive metadata
-│   ├── generate_seg_neg_strong_meta.py # Generate segmented negative metadata
-│   ├── analyze_strong_label_distribution.py # Strong label distribution analysis
-│   └── analyze_weak_label_distribution.py   # Weak label distribution analysis
+│   ├── generate_meta/              # Metadata generation scripts
+│   │   ├── generate_raw_target_meta.py    # Extract raw positive metadata
+│   │   ├── generate_raw_neg_strong_meta.py # Extract raw negative strong metadata
+│   │   ├── generate_raw_neg_weak_meta.py  # Extract raw negative weak metadata
+│   │   ├── generate_seg_target_meta.py    # Generate segmented positive metadata
+│   │   └── generate_seg_neg_strong_meta.py # Generate segmented negative metadata
+│   └── analyze_meta/               # Analysis scripts
+│       ├── analyze_single_strong_dataset.py # Single strong dataset analysis
+│       ├── analyze_strong_label_distribution.py # Strong label distribution analysis
+│       └── analyze_weak_label_distribution.py   # Weak label distribution analysis
 ├── out/                            # Analysis outputs (ignored by git)
 │   ├── strong_label_distribution_analysis.png # Strong label analysis
 │   ├── weak_label_distribution_analysis.png   # Weak label analysis (combined)
@@ -55,7 +58,7 @@ audioset_strong/
 │   ├── weak_label_distribution_stats.csv      # Weak label statistics (combined)
 │   └── weak_label_distribution_stats_{dataset}.csv # Individual dataset statistics
 ├── scripts/                        # Utility scripts
-│   ├── create_env.sh               # Environment setup
+│   ├── create_env.sh               # Simple conda environment setup
 │   ├── process_audioset_metadata.sh  # Complete processing pipeline
 │   └── analyze_all_datasets.sh    # Complete dataset analysis (all 6 datasets)
 └── requirements.txt               # Python dependencies
@@ -69,15 +72,16 @@ audioset_strong/
    cd audioset_strong
    ```
 
-2. **Create and activate a virtual environment**:
+2. **Set up environment** (requires conda):
    ```bash
    bash scripts/create_env.sh
+   conda activate audioset_strong
    ```
 
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+The script will:
+- Create a conda environment named `audioset_strong` with Python 3.13
+- Install all required packages from `requirements.txt`
+- Handle environment cleanup if it already exists
 
 ## Usage
 
@@ -327,6 +331,36 @@ YxlGt805lTA_30000	0.960	1.920	/m/07rgkc5	NOT_PRESENT
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Makefile Targets
+
+The project includes convenient Makefile targets for cleaning generated files:
+
+```bash
+# Show all available targets
+make help
+
+# Clean cache files, temp files, etc. (preserves metadata and analysis)
+make clean
+
+# Remove generated metadata files (preserves original AudioSet files)
+make clean-metadata
+
+# Remove all analysis output files
+make clean-analysis
+
+# Clean everything (cache, metadata, and analysis)
+make clean-all
+
+# Sync with main branch
+make sync
+```
+
+**Target Details:**
+- `clean`: Removes Python cache, .DS_Store, pytest cache, etc.
+- `clean-metadata`: Removes generated .tsv/.csv files in subdirectories (preserves original AudioSet files)
+- `clean-analysis`: Removes the entire `out/` directory
+- `clean-all`: Runs all cleaning targets
 
 ## Citation
 

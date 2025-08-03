@@ -1,0 +1,41 @@
+# Baby‑Cry AudioSet training configuration
+
+# === Source metadata paths ===
+pos_strong_paths:
+  - "./meta/baby_cry/seg1s/pos/baby_cry_ov_audioset_train_strong.tsv"
+  - "./meta/baby_cry/seg1s/pos/baby_cry_ov_audioset_eval_strong.tsv"
+  - "./meta/baby_cry/seg1s/pos/baby_cry_nov_audioset_train_strong.tsv"
+  - "./meta/baby_cry/seg1s/pos/baby_cry_nov_audioset_eval_strong.tsv"
+
+neg_strong_paths:
+  - "./meta/baby_cry/seg1s/neg_strong/baby_cry_audioset_train_strong.tsv"
+  - "./meta/baby_cry/seg1s/neg_strong/baby_cry_audioset_eval_strong.tsv"
+
+neg_weak_paths:
+  - "./meta/baby_cry/raw/neg_weak/baby_cry_neg_weak_unbalanced_train_segments.csv"
+  - "./meta/baby_cry/raw/neg_weak/baby_cry_neg_weak_balanced_train_segments.csv"
+  - "./meta/baby_cry/raw/neg_weak/baby_cry_neg_weak_eval_segments.csv"
+
+# === Clip & audio parameters ===
+sample_rate: 32000          # Hz
+clip_length: 1.0            # seconds fed to the model
+
+# === Batch composition ===
+batch_size: 32
+pos_per_batch: 0.25         # 25 % positives
+strong_neg_per_batch: 0.25  # 25 % strong negatives (Tier‑A + Tier‑B)
+weak_neg_per_batch: 0.5     # 50 % weak negatives
+
+# === Two‑tier strong‑neg specifics ===
+tierA_fraction: 0.6         # 60 % of strong‑neg clips in Tier‑A
+primary_fraction: 0.9       # inside Tier‑A → 90 % √freq, 10 % completion
+hard_buffer_size: 50000
+completion_rare_cutoff: 5   # labels with < 4 clips are bucketed as other_rare
+
+# === Weak‑neg balancing ===
+head_labels: ["/m/09x0r", "/m/04rlf"]   # speech & music MIDs
+head_keep_fraction: 0.4                    # keep 40 % of those heads
+
+# === Training schedule ===
+num_epochs: 50
+val_threshold: 0.5         # τ for false‑positive mining

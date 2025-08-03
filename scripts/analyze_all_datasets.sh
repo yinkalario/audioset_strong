@@ -30,7 +30,7 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "src/analyze_strong_label_distribution.py" ]; then
+if [ ! -f "src/analyze_meta/analyze_single_strong_dataset.py" ]; then
     print_error "Please run this script from the audioset_strong root directory"
     exit 1
 fi
@@ -61,7 +61,7 @@ print_step "Analyzing Strong Label Datasets (by duration)"
 # Process train dataset
 if [ -f "meta/audioset_train_strong.tsv" ]; then
     print_step "Analyzing train strong labels"
-    python3 src/analyze_single_strong_dataset.py \
+    python3 src/analyze_meta/analyze_single_strong_dataset.py \
         --input-file "meta/audioset_train_strong.tsv" \
         --output-prefix "out/strong_label_distribution_train" \
         --dataset-name "Train" \
@@ -72,7 +72,7 @@ fi
 # Process eval dataset
 if [ -f "meta/audioset_eval_strong.tsv" ]; then
     print_step "Analyzing eval strong labels"
-    python3 src/analyze_single_strong_dataset.py \
+    python3 src/analyze_meta/analyze_single_strong_dataset.py \
         --input-file "meta/audioset_eval_strong.tsv" \
         --output-prefix "out/strong_label_distribution_eval" \
         --dataset-name "Eval" \
@@ -83,7 +83,7 @@ fi
 # Process eval framed dataset
 if [ -f "meta/audioset_eval_strong_framed_posneg.tsv" ]; then
     print_step "Analyzing eval framed strong labels (PRESENT events only)"
-    python3 src/analyze_single_strong_dataset.py \
+    python3 src/analyze_meta/analyze_single_strong_dataset.py \
         --input-file "meta/audioset_eval_strong_framed_posneg.tsv" \
         --output-prefix "out/strong_label_distribution_eval_framed" \
         --dataset-name "Eval Framed" \
@@ -133,7 +133,7 @@ for dataset_name in $WEAK_DATASETS; do
         # Create individual analysis by setting only one file and nullifying others
         case $dataset_name in
             "balanced_train")
-                python3 src/analyze_weak_label_distribution.py \
+                python3 src/analyze_meta/analyze_weak_label_distribution.py \
                     --unbalanced-train "/dev/null" \
                     --balanced-train "$file_path" \
                     --eval-file "/dev/null" \
@@ -141,7 +141,7 @@ for dataset_name in $WEAK_DATASETS; do
                     --output-dir out
                 ;;
             "unbalanced_train")
-                python3 src/analyze_weak_label_distribution.py \
+                python3 src/analyze_meta/analyze_weak_label_distribution.py \
                     --unbalanced-train "$file_path" \
                     --balanced-train "/dev/null" \
                     --eval-file "/dev/null" \
@@ -149,7 +149,7 @@ for dataset_name in $WEAK_DATASETS; do
                     --output-dir out
                 ;;
             "eval")
-                python3 src/analyze_weak_label_distribution.py \
+                python3 src/analyze_meta/analyze_weak_label_distribution.py \
                     --unbalanced-train "/dev/null" \
                     --balanced-train "/dev/null" \
                     --eval-file "$file_path" \

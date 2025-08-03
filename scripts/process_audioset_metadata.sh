@@ -30,7 +30,7 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "src/generate_raw_target_meta.py" ]; then
+if [ ! -f "src/generate_meta/generate_raw_target_meta.py" ]; then
     print_error "Please run this script from the audioset_strong root directory"
     exit 1
 fi
@@ -56,20 +56,20 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     # Update the target configuration in the script
     case $sound_type in
         "baby_cry")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_raw_target_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_raw_target_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_meta/generate_raw_target_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_meta/generate_raw_target_meta.py
             ;;
         "gun")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_raw_target_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_raw_target_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_meta/generate_raw_target_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_meta/generate_raw_target_meta.py
             ;;
         "snore")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_raw_target_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_target_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_meta/generate_raw_target_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_meta/generate_raw_target_meta.py
             ;;
     esac
     
-    python3 src/generate_raw_target_meta.py --input-dir meta --output-dir meta
+    python3 src/generate_meta/generate_raw_target_meta.py --input-dir meta --output-dir meta
     print_success "Generated raw positive metadata for $sound_type"
 done
 
@@ -82,20 +82,20 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     # Update the target configuration in the script
     case $sound_type in
         "baby_cry")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_raw_neg_strong_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_meta/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_meta/generate_raw_neg_strong_meta.py
             ;;
         "gun")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_raw_neg_strong_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_meta/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_meta/generate_raw_neg_strong_meta.py
             ;;
         "snore")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_raw_neg_strong_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_meta/generate_raw_neg_strong_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_meta/generate_raw_neg_strong_meta.py
             ;;
     esac
 
-    python3 src/generate_raw_neg_strong_meta.py --input-dir meta --output-dir meta
+    python3 src/generate_meta/generate_raw_neg_strong_meta.py --input-dir meta --output-dir meta
     print_success "Generated raw negative strong metadata for $sound_type"
 done
 
@@ -108,31 +108,31 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     # Update the target configuration in the script
     case $sound_type in
         "baby_cry")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_raw_neg_weak_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/t\/dd00002'\'']  # Baby cry, infant cry/' src/generate_meta/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''baby_cry'\''/' src/generate_meta/generate_raw_neg_weak_meta.py
             ;;
         "gun")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_raw_neg_weak_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/032s66'\'', '\''\/m\/04zjc'\'', '\''\/m\/073cg4'\'']  # Gunshot\/gunfire, Machine gun, Cap gun/' src/generate_meta/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''gun'\''/' src/generate_meta/generate_raw_neg_weak_meta.py
             ;;
         "snore")
-            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_raw_neg_weak_meta.py
-            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_labels = .*/target_labels = ['\''\/m\/01d3sd'\'', '\''\/m\/07q0yl5'\'']  # Snoring, Snort/' src/generate_meta/generate_raw_neg_weak_meta.py
+            sed -i.bak 's/^target_name = .*/target_name = '\''snore'\''/' src/generate_meta/generate_raw_neg_weak_meta.py
             ;;
     esac
 
-    python3 src/generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
+    python3 src/generate_meta/generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
     print_success "Generated raw negative weak metadata for $sound_type"
 done
 
 # Step 4: Generate segmented positive metadata
 print_step "Step 4: Generating Segmented Positive Metadata"
-python3 src/generate_seg_target_meta.py
+python3 src/generate_meta/generate_seg_target_meta.py
 print_success "Generated segmented positive metadata for all sound types"
 
 # Step 5: Generate segmented negative metadata
 print_step "Step 5: Generating Segmented Negative Metadata"
-python3 src/generate_seg_neg_strong_meta.py
+python3 src/generate_meta/generate_seg_neg_strong_meta.py
 print_success "Generated segmented negative metadata for all sound types"
 
 # Optional: Generate label distribution analyses
@@ -140,7 +140,7 @@ print_step "Optional: Generating Label Distribution Analyses"
 print_warning "Generating strong and weak label distribution analyses..."
 
 # Use the correct analysis script for strong labels
-python3 src/analyze_single_strong_dataset.py \
+python3 src/analyze_meta/analyze_single_strong_dataset.py \
     --input-file meta/audioset_train_strong.tsv \
     --output-prefix out/strong_label_distribution_train \
     --dataset-name "Train" \
@@ -148,7 +148,7 @@ python3 src/analyze_single_strong_dataset.py \
 print_success "Generated strong label distribution analysis"
 
 # Use the correct arguments for weak labels
-python3 src/analyze_weak_label_distribution.py \
+python3 src/analyze_meta/analyze_weak_label_distribution.py \
     --unbalanced-train meta/unbalanced_train_segments.csv \
     --balanced-train meta/balanced_train_segments.csv \
     --eval-file meta/eval_segments.csv \
@@ -157,7 +157,7 @@ python3 src/analyze_weak_label_distribution.py \
 print_success "Generated weak label distribution analysis"
 
 # Clean up backup files
-rm -f src/*.bak
+rm -f src/generate_meta/*.bak src/analyze_meta/*.bak
 
 print_step "Pipeline Complete!"
 print_success "All metadata processing steps completed successfully"
