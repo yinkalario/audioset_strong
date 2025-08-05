@@ -18,6 +18,36 @@ The AudioSet strong labeling dataset includes:
 - **Evaluation set**: 16,996 clips with 139,538 sound events across 416 unique labels
 - **Framed evaluation set**: 14,203 clips with both positive and negative labels on 960ms frames
 
+## AudioSet Audio Directory Structure
+
+The AudioSet audio files are organized in a specific directory structure:
+
+```
+audio_root/
+├── unbalanced_train_segments/
+│   ├── unbalanced_train_segments_part00/
+│   │   ├── Y-0049eXE2Zc.wav
+│   │   ├── Y-004VvnOKJE.wav
+│   │   └── ...
+│   ├── unbalanced_train_segments_part01/
+│   │   └── ...
+│   └── ... (up to part40)
+├── balanced_train_segments/
+│   ├── Y00M9FhCet6s.wav
+│   ├── Y00QiuqBbiI.wav
+│   └── ...
+└── eval_segments/
+    ├── Y007P6bFgRCU.wav
+    ├── Y00A8LzmKCE.wav
+    └── ...
+```
+
+**Important Notes:**
+- Audio files are prefixed with 'Y' (e.g., `Y-0049eXE2Zc.wav` for YID `-0049eXE2Zc`)
+- Unbalanced training set is split into 41 parts (part00 to part40)
+- Some audio files may be missing due to YouTube video removal/restrictions
+- The pipeline automatically handles missing files by filtering them from metadata
+
 ## Project Structure
 
 ```
@@ -82,6 +112,24 @@ The script will:
 - Create a conda environment named `audioset_strong` with Python 3.13
 - Install all required packages from `requirements.txt`
 - Handle environment cleanup if it already exists
+
+## Configuration
+
+### Audio Root Path
+
+Before using the training pipeline, configure the path to your AudioSet audio files in `configs/baby_cry.yaml`:
+
+```yaml
+# === Audio data path ===
+audio_root: "/path/to/your/audioset/audio"  # Update this path
+```
+
+The `audio_root` should point to the directory containing the AudioSet audio structure:
+- `unbalanced_train_segments/` (with subdirectories part00-part40)
+- `balanced_train_segments/`
+- `eval_segments/`
+
+**Note**: If audio files are not available locally (e.g., stored on a remote server), the pipeline will still work but will show warnings about missing audio files. Missing files are automatically filtered from the training data.
 
 ## Usage
 

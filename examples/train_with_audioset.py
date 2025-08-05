@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""
+Example script showing how to use the AudioSet training pipeline.
+
+This script demonstrates:
+1. Processing AudioSet metadata with audio path validation
+2. Creating a dataset that handles missing audio files
+3. Setting up the two-tier batch sampler
+4. Running a simple training loop
+
+Before running this script:
+1. Update the audio_root path in configs/baby_cry.yaml
+2. Ensure you have the required metadata files in meta/baby_cry/seg1s/
+"""
+
+import sys
+from pathlib import Path
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.data.data_processor import AudioSetDataProcessor
+from src.data.dataset import AudioSetDataset
+from src.data.sampler import TwoTierBatchSampler
+
+
+def simple_model(input_size: int, num_classes: int = 1) -> nn.Module:
+    """Create a simple CNN model for demonstration."""
+    return nn.Sequential(
+        nn.Conv1d(1, 32, kernel_size=1024, stride=512),
+        nn.ReLU(),
+        nn.AdaptiveAvgPool1d(1),
+        nn.Flatten(),
+        nn.Linear(32, num_classes),
+        nn.Sigmoid()
+    )
+
+
+def main():
+    """Main training pipeline demonstration."""
+    print("🎵 AudioSet Training Pipeline Example")
+    print("=" * 50)
+    
+    # Configuration
+    config_path = "configs/baby_cry.yaml"
+    
+    # Step 1: Process metadata
+    print("\n1. Processing AudioSet metadata...")
+    processor = AudioSetDataProcessor(config_path)
+    processor.process_and_save()
+    
+    # Get processed paths
+    processed_dir = Path(processor.config["processed_data_dir"])
+    metadata_path = str(processed_dir / "metadata.parquet")
+    mappings_path = str(processed_dir / "label_mappings.pkl")
+    
+    print(f"   ✓ Metadata saved to: {metadata_path}")
+    print(f"   ✓ Label mappings saved to: {mappings_path}")
+    
+    # Step 2: Create dataset
+    print("\n2. Creating AudioSet dataset...")
+    dataset = AudioSetDataset(metadata_path, config_path)
+    
+    data_info = dataset.get_data_split_info()
+    print(f"   ✓ Total samples: {data_info['total_samples']}")
+    print(f"   ✓ Positive samples: {data_info['positive_samples']}")
+    print(f"   ✓ Strong negative samples: {data_info['strong_negative_samples']}")
+    print(f"   ✓ Weak negative samples: {data_info['weak_negative_samples']}")
+    print(f"   ✓ Clip length: {data_info['clip_length']}s")
+    
+    # Step 3: Create sampler
+    print("\n3. Setting up two-tier batch sampler...")
+    sampler = TwoTierBatchSampler(metadata_path, mappings_path, config_path)
+    
+    steps_per_epoch = sampler.steps_per_epoch
+    print(f"   ✓ Steps per epoch: {steps_per_epoch}")
+    
+    # Step 4: Create DataLoader
+    print("\n4. Creating DataLoader...")
+    dataloader = DataLoader(
+        dataset,
+        batch_sampler=sampler,
+        num_workers=0,  # Set to 0 for debugging, increase for real training
+        pin_memory=True
+    )
+    
+    # Step 5: Create model
+    print("\n5. Creating model...")
+    model = simple_model(data_info['clip_length'] * data_info['sample_rate'])
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.BCELoss()
+    
+    print(f"   ✓ Model created with input size: {data_info['clip_length'] * data_info['sample_rate']}")
+    
+    # Step 6: Training loop demonstration
+    print("\n6. Running training demonstration...")
+    model.train()
+    
+    for epoch in range(2):  # Just 2 epochs for demonstration
+        print(f"\n   Epoch {epoch + 1}/2")
+        sampler.set_epoch(epoch)
+        
+        epoch_loss = 0.0
+        num_batches = 0
+        
+        for batch_idx, (wav, y, labels_mask, clip_ids) in enumerate(dataloader):
+            if batch_idx >= 3:  # Only process first 3 batches for demo
+                break
+                
+            # Forward pass
+            wav = wav.unsqueeze(1)  # Add channel dimension [B, 1, T]
+            logits = model(wav)
+            loss = criterion(logits.squeeze(), y.float())
+            
+            # Backward pass
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            epoch_loss += loss.item()
+            num_batches += 1
+            
+            # Count positive/negative samples
+            pos_count = y.sum().item()
+            neg_count = len(y) - pos_count
+            
+            print(f"     Batch {batch_idx}: loss={loss.item():.4f}, "
+                  f"pos={pos_count}, neg={neg_count}")
+        
+        avg_loss = epoch_loss / num_batches if num_batches > 0 else 0
+        print(f"   Average loss: {avg_loss:.4f}")
+    
+    print("\n🎉 Training demonstration completed!")
+    print("\nNext steps for real training:")
+    print("- Increase num_workers in DataLoader for faster data loading")
+    print("- Use a proper model architecture (e.g., ResNet, EfficientNet)")
+    print("- Add validation loop and metrics")
+    print("- Implement hard negative mining updates")
+    print("- Add model checkpointing and logging")
+
+
+if __name__ == "__main__":
+    main()
