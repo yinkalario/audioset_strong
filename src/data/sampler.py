@@ -251,7 +251,7 @@ class TwoTierBatchSampler(Sampler):
     def _draw_strong_negatives(self) -> List[int]:
         """Draw strong negative samples (Tier A + Tier B)."""
         batch_strong = []
-        import pudb;pu.db
+
         # Tier A: √freq + completion pass
         primary_count = int(self.tierA_count * self.primary_fraction)
         

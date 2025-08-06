@@ -181,7 +181,7 @@ def test_sampler():
     """Test the two-tier batch sampler."""
     print("\n=== Testing Two-Tier Batch Sampler ===")
     temp_dir, config_path = create_test_setup()
-    import pudb;pu.db
+
     try:
         # Change to temp directory and process data
         import os
@@ -274,7 +274,7 @@ def test_hard_negatives():
     """Test hard negative mining functionality."""
     print("\n=== Testing Hard Negative Mining ===")
     temp_dir, config_path = create_test_setup()
-    import pudb;pu.db
+
     try:
         import os
         original_cwd = Path.cwd()
@@ -336,7 +336,7 @@ def test_multi_gpu():
     """Test multi-GPU (DDP) functionality."""
     print("\n=== Testing Multi-GPU Support ===")
     temp_dir, config_path = create_test_setup()
-    import pudb;pu.db
+
     try:
         import os
         original_cwd = Path.cwd()
