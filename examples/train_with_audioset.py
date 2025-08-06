@@ -117,14 +117,19 @@ def main():
     print("\n6. Running training demonstration...")
     model.train()
 
+    # Get hard negative mining threshold from config
+    hard_neg_threshold = config.get("val_threshold", 0.5)
+    print(f"   ✓ Hard negative threshold: {hard_neg_threshold}")
+
     for epoch in range(2):  # Just 2 epochs for demonstration
         print(f"\n   Epoch {epoch + 1}/2")
         sampler.set_epoch(epoch)
 
         epoch_loss = 0.0
         num_batches = 0
+        epoch_hard_negatives = []  # Collect hard negatives for end-of-epoch update
 
-        for batch_idx, (wav, y, _, _) in enumerate(dataloader):
+        for batch_idx, (wav, y, _, clip_ids) in enumerate(dataloader):
             if batch_idx >= 3:  # Only process first 3 batches for demo
                 break
 
@@ -141,12 +146,25 @@ def main():
             epoch_loss += loss.item()
             num_batches += 1
 
+            # Collect hard negatives (but don't update buffer yet)
+            with torch.no_grad():
+                predictions = torch.sigmoid(logits.squeeze())
+                # Find negative samples (y=0) with high predictions (false positives)
+                for pred, label, clip_id in zip(predictions, y, clip_ids):
+                    if label == 0 and pred > hard_neg_threshold:
+                        epoch_hard_negatives.append(clip_id)
+
             # Count positive/negative samples
             pos_count = y.sum().item()
             neg_count = len(y) - pos_count
 
             print(f"     Batch {batch_idx}: loss={loss.item():.4f}, "
                   f"pos={pos_count}, neg={neg_count}")
+
+        # Update hard negative buffer at end of epoch
+        if epoch_hard_negatives:
+            sampler.extend_hard_buffer(epoch_hard_negatives)
+            print(f"   ✓ Added {len(epoch_hard_negatives)} hard negatives to buffer")
 
         avg_loss = epoch_loss / num_batches if num_batches > 0 else 0
         print(f"   Average loss: {avg_loss:.4f}")
@@ -156,7 +174,7 @@ def main():
     print("- Increase num_workers in DataLoader for faster data loading")
     print("- Use a proper model architecture (e.g., ResNet, EfficientNet)")
     print("- Add validation loop and metrics")
-    print("- Implement hard negative mining updates")
+    print(f"- Tune hard negative mining threshold (currently {hard_neg_threshold})")
     print("- Add model checkpointing and logging")
 
 

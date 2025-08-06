@@ -92,10 +92,40 @@ for epoch in range(num_epochs):
         # clip_ids: [batch_size] - Clip identifiers
 
         # Your training code here
-        pass
+
+        # Hard negative mining (optional but recommended)
+        # Collect hard negatives during epoch, update buffer at epoch end
+        epoch_hard_negatives = []
+
+        with torch.no_grad():
+            predictions = torch.sigmoid(logits.squeeze())
+            # Find negative samples with high predictions (false positives)
+            threshold = config["val_threshold"]  # Use config parameter
+            for pred, label, clip_id in zip(predictions, labels, clip_ids):
+                if label == 0 and pred > threshold:
+                    epoch_hard_negatives.append(clip_id)
+
+    # Update sampler's hard negative buffer at end of epoch
+    if epoch_hard_negatives:
+        sampler.extend_hard_buffer(epoch_hard_negatives)
 ```
 
-### Step 3: Analyze Datasets (Optional)
+**💡 For a complete working example, see `examples/train_with_audioset.py`**
+
+### Step 3: Run Complete Training Example
+
+```bash
+# See examples/train_with_audioset.py for a complete working example
+python examples/train_with_audioset.py
+```
+
+This demonstrates:
+- Complete pipeline from metadata processing to training
+- Two-tier batch sampling with hard negative mining
+- Proper DataLoader setup and training loop
+- Hard negative buffer updates during training
+
+### Step 4: Analyze Datasets (Optional)
 
 ```bash
 # Generate comprehensive analysis of all AudioSet datasets
@@ -307,6 +337,36 @@ The sampler implements sophisticated negative sampling strategies:
 - **Tier B**: Low-frequency labels with uniform sampling
 - **Completion Sampling**: Ensures all labels are seen per epoch
 - **Hard Negative Mining**: Dynamically focuses on challenging examples
+
+### Hard Negative Mining
+The sampler supports adaptive hard negative mining to improve model performance:
+
+```python
+# Collect hard negatives during training epoch
+epoch_hard_negatives = []
+
+for batch in dataloader:
+    # ... training code ...
+
+    # Identify false positives (collect, don't update yet)
+    with torch.no_grad():
+        predictions = torch.sigmoid(logits)
+        threshold = config["val_threshold"]  # From config file
+        for pred, label, clip_id in zip(predictions, labels, clip_ids):
+            if label == 0 and pred > threshold:
+                epoch_hard_negatives.append(clip_id)
+
+# Update buffer at end of epoch for efficiency
+if epoch_hard_negatives:
+    sampler.extend_hard_buffer(epoch_hard_negatives)
+```
+
+**Key Features:**
+- **End-of-Epoch Updates**: Efficient batch updates instead of per-step
+- **Config-Driven**: Threshold controlled by `val_threshold` in config
+- **Dynamic Buffer**: Maintains a buffer of challenging negative samples
+- **Automatic Integration**: Seamlessly integrates with two-tier sampling
+- **Performance Boost**: Focuses training on difficult examples
 
 ### Smart Missing File Handling
 The pipeline automatically handles missing YouTube videos:
