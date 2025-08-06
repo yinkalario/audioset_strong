@@ -38,7 +38,7 @@ meta/
 │   ├── raw/pos/          # Raw positive labels
 │   ├── raw/neg_strong/   # Raw negative strong labels
 │   ├── raw/neg_weak/     # Raw negative weak labels
-│   └── seg1s/            # 1-second segmented clips
+│   └── seg1s/            # Fixed-length segmented clips (configurable duration)
 └── processed/            # Training-ready data
     ├── metadata.parquet  # Efficient format for training
     ├── metadata.csv      # Human-readable format
@@ -172,7 +172,7 @@ Transforms raw AudioSet metadata into training-ready format:
 
 ### 2. Dataset (`src/data/dataset.py`)
 PyTorch Dataset with intelligent audio loading:
-- **Configurable clip duration**: Supports any clip length (0.5s, 1s, 2s, etc.)
+- **Flexible clip duration**: Configurable clip length (default 1.0s, supports 0.5s, 2s, etc.)
 - **Smart cropping**: Random cropping for weak labels, exact timing for strong labels
 - **Robust audio loading**: Automatic resampling and normalization
 - **Missing file handling**: Gracefully handles unavailable audio files
@@ -228,8 +228,8 @@ audioset_strong/
 │   │   │   ├── neg_strong/         # Raw negative strong labels
 │   │   │   └── neg_weak/           # Raw negative weak labels (10-second segments)
 │   │   └── seg1s/
-│   │       ├── pos/                # 1-second segmented positive labels
-│   │       └── neg_strong/         # 1-second segmented negative labels
+│   │       ├── pos/                # Fixed-length segmented positive labels
+│   │       └── neg_strong/         # Fixed-length segmented negative labels
 │   ├── gun/                        # Gun sound metadata (same structure)
 │   └── snore/                      # Snore sound metadata (same structure)
 ├── src/                            # Source code
@@ -310,9 +310,9 @@ neg_strong_paths: ["meta/baby_cry/seg1s/baby_cry_neg_train.tsv"]
 weak_paths: ["meta/baby_cry/seg1s/baby_cry_weak_train.csv"]
 processed_data_dir: "meta/baby_cry/processed"
 
-# Audio parameters
+# Audio parameters (flexible configuration)
 sample_rate: 16000
-clip_length: 1.0  # seconds
+clip_length: 1.0  # Configurable: 0.5, 1.0, 2.0, etc. seconds
 
 # Head trimming (unbalanced data only)
 head_labels: ["/m/09x0r", "/m/04rlf"]  # Speech, Music
@@ -498,8 +498,8 @@ bash scripts/process_audioset_metadata.sh
 2. Generates raw positive metadata for baby_cry, gun, and snore
 3. Generates raw negative strong metadata for all three sound types
 4. Generates raw negative weak metadata for all three sound types
-5. Creates 1-second segmented positive metadata
-6. Creates 1-second segmented negative metadata
+5. Creates fixed-length segmented positive metadata
+6. Creates fixed-length segmented negative metadata
 7. Generates basic label distribution analyses (train dataset only)
 8. Displays summary of generated files
 
@@ -538,7 +538,7 @@ meta/baby_cry/
 │       ├── baby_cry_neg_weak_unbalanced_train_segments.csv # 2,039,519 segments
 │       ├── baby_cry_neg_weak_balanced_train_segments.csv  # 22,100 segments
 │       └── baby_cry_neg_weak_eval_segments.csv            # 20,311 segments
-└── seg1s/                          # 1-second segmented data
+└── seg1s/                          # Fixed-length segmented data
     ├── pos/                        # Segmented positive labels
     │   ├── baby_cry_nov_audioset_train_strong.tsv         # 108 segments
     │   ├── baby_cry_ov_audioset_train_strong.tsv          # 2,947 segments
