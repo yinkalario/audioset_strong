@@ -34,12 +34,12 @@ def create_test_setup():
         "neg_strong_paths": [str(temp_dir / "neg.tsv")],
         "neg_weak_paths": [str(temp_dir / "weak.csv")],
         "head_labels": ["/m/09x0r", "/m/04rlf"],
-        "head_keep_frac": 0.5,
+        "head_keep_frac": 0.2,
         "head_trim_seed": 42,
         "processed_data_dir": str(temp_dir / "processed"),
         "completion_rare_cutoff": 2,
         "sample_rate": 16000,  # Lower for testing
-        "clip_length": 0.5,    # Shorter for testing
+        "clip_length": 0.8,    # Shorter for testing
         "batch_size": 8,       # Smaller for testing
         "pos_per_batch_frac": 0.25,
         "strong_neg_per_batch_frac": 0.25,
@@ -134,7 +134,7 @@ def test_dataset():
     """Test the AudioSet dataset."""
     print("=== Testing AudioSet Dataset ===")
     temp_dir, config_path = create_test_setup()
-    import pudb;pu.db
+
     try:
         # Change to temp directory and process data
         import os
@@ -181,7 +181,7 @@ def test_sampler():
     """Test the two-tier batch sampler."""
     print("\n=== Testing Two-Tier Batch Sampler ===")
     temp_dir, config_path = create_test_setup()
-    
+    import pudb;pu.db
     try:
         # Change to temp directory and process data
         import os
@@ -274,7 +274,7 @@ def test_hard_negatives():
     """Test hard negative mining functionality."""
     print("\n=== Testing Hard Negative Mining ===")
     temp_dir, config_path = create_test_setup()
-    
+    import pudb;pu.db
     try:
         import os
         original_cwd = Path.cwd()
@@ -336,7 +336,7 @@ def test_multi_gpu():
     """Test multi-GPU (DDP) functionality."""
     print("\n=== Testing Multi-GPU Support ===")
     temp_dir, config_path = create_test_setup()
-    
+    import pudb;pu.db
     try:
         import os
         original_cwd = Path.cwd()
