@@ -34,9 +34,38 @@ conda create -n ${ENV_NAME} python=${PYTHON_VERSION} -y
 
 # Install packages
 echo "Installing required packages..."
-conda run -n ${ENV_NAME} pip install --upgrade pip --verbose
+
+# Initialize conda for bash (needed for conda activate)
+eval "$(conda shell.bash hook)"
+
+# Activate the environment
+echo "Activating environment: ${ENV_NAME}"
+conda activate ${ENV_NAME}
+
+# Upgrade pip
+echo "Upgrading pip..."
+pip install --upgrade pip
+
+echo ""
 echo "Installing packages from requirements.txt..."
-conda run -n ${ENV_NAME} pip install -r requirements.txt --verbose --progress-bar on
+echo "This may take a few minutes. Installing packages one by one for better visibility:"
+echo ""
+
+# Read requirements.txt and install packages one by one
+while IFS= read -r package || [ -n "$package" ]; do
+    # Skip empty lines and comments
+    if [[ -n "$package" && ! "$package" =~ ^[[:space:]]*# ]]; then
+        echo "📦 Installing: $package"
+        pip install "$package"
+        echo "✅ Completed: $package"
+        echo ""
+    fi
+done < requirements.txt
+
+# Deactivate environment
+conda deactivate
+
+echo "🎉 All packages installed successfully!"
 
 echo "✓ Environment setup complete!"
 echo ""
