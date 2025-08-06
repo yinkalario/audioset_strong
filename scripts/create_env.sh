@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 ENV_NAME="audioset_strong"
-PYTHON_VERSION="3.13"
+PYTHON_VERSION="3.12"
 
 echo "=== AudioSet Strong Environment Setup ==="
 
