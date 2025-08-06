@@ -47,7 +47,7 @@ class TwoTierBatchSampler(Sampler):
             drop_last: If True, drop the last incomplete batch
         """
         super().__init__(dataset)
-
+        import pudb;pu.db
         if num_replicas is None:
             if torch.distributed.is_available() and torch.distributed.is_initialized():
                 num_replicas = torch.distributed.get_world_size()
