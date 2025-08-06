@@ -51,9 +51,11 @@ def main():
     config_path = "configs/baby_cry.yaml"
 
     # Step 1: Process metadata
-    print("\n1. Processing AudioSet metadata...")
-    processor = AudioSetDataProcessor(config_path)
-    processor.process_and_save()
+    # This only needs to be run once. So you can skip this step
+    # if you have already run it.
+    # print("\n1. Processing AudioSet metadata...")
+    # processor = AudioSetDataProcessor(config_path)
+    # processor.process_and_save()
 
     # Get processed paths
     processed_dir = Path(processor.config["processed_data_dir"])
