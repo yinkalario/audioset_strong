@@ -134,7 +134,7 @@ def test_dataset():
     """Test the AudioSet dataset."""
     print("=== Testing AudioSet Dataset ===")
     temp_dir, config_path = create_test_setup()
-    
+    import pudb;pu.db
     try:
         # Change to temp directory and process data
         import os
