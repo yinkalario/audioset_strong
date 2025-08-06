@@ -55,9 +55,9 @@ from src.data.sampler import TwoTierBatchSampler
 from torch.utils.data import DataLoader
 
 # 1. Process metadata (handles missing files automatically)
+processor = AudioSetDataProcessor("configs/baby_cry.yaml")
 # This only needs to be run once. So you can skip this step
 # if you have already run it.
-processor = AudioSetDataProcessor("configs/baby_cry.yaml")
 processor.process_and_save()
 
 # 2. Create dataset
