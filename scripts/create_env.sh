@@ -3,6 +3,8 @@
 # AudioSet Strong Labeling Environment Setup Script
 # Creates a conda environment and installs required packages
 
+# Author: Yin Cao
+
 set -e  # Exit on any error
 
 ENV_NAME="audioset_strong"
