@@ -34,8 +34,9 @@ conda create -n ${ENV_NAME} python=${PYTHON_VERSION} -y
 
 # Install packages
 echo "Installing required packages..."
-conda run -n ${ENV_NAME} pip install --upgrade pip
-conda run -n ${ENV_NAME} pip install -r requirements.txt
+conda run -n ${ENV_NAME} pip install --upgrade pip --verbose
+echo "Installing packages from requirements.txt..."
+conda run -n ${ENV_NAME} pip install -r requirements.txt --verbose --progress-bar on
 
 echo "✓ Environment setup complete!"
 echo ""
