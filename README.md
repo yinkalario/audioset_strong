@@ -85,7 +85,9 @@ from src.data.sampler import audioset_collate_fn
 
 dataloader = DataLoader(dataset, batch_sampler=sampler, collate_fn=audioset_collate_fn)
 
-# 5. Create mapping for hard negative mining
+# 5. Setup device and create mapping for hard negative mining
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)  # Move model to GPU if available
 clip_id_to_idx = {row['clip_id']: idx for idx, row in dataset.df.iterrows()}
 
 # 6. Training loop
@@ -93,10 +95,14 @@ for epoch in range(num_epochs):
     sampler.set_epoch(epoch)  # Important for deterministic sampling
 
     for batch_idx, (wav, labels, labels_list, clip_ids) in enumerate(dataloader):
-        # wav: [batch_size, audio_length] - Audio waveforms
-        # labels: [batch_size] - Binary labels (1=positive, 0=negative)
-        # labels_list: [batch_size] - List of label lists for each sample
-        # clip_ids: [batch_size] - Clip identifiers
+        # Move data to device
+        wav = wav.to(device)
+        labels = labels.to(device)
+
+        # wav: [batch_size, audio_length] - Audio waveforms on GPU
+        # labels: [batch_size] - Binary labels on GPU
+        # labels_list: [batch_size] - List of label lists (CPU)
+        # clip_ids: [batch_size] - Clip identifiers (CPU)
 
         # Your training code here
 
@@ -106,9 +112,13 @@ for epoch in range(num_epochs):
 
         with torch.no_grad():
             predictions = torch.sigmoid(logits.squeeze())
+            # Move to CPU for processing
+            predictions_cpu = predictions.cpu()
+            labels_cpu = labels.cpu()
+
             # Find negative samples with high predictions (false positives)
             threshold = config["val_threshold"]  # Use config parameter
-            for pred, label, clip_id in zip(predictions, labels, clip_ids):
+            for pred, label, clip_id in zip(predictions_cpu, labels_cpu, clip_ids):
                 if label == 0 and pred > threshold:
                     # Convert clip_id to dataset index for sampler
                     if clip_id in clip_id_to_idx:
@@ -351,20 +361,29 @@ The sampler implements sophisticated negative sampling strategies:
 The sampler supports adaptive hard negative mining to improve model performance:
 
 ```python
-# Create mapping from clip_id to dataset index
+# Setup device and create mapping from clip_id to dataset index
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
 clip_id_to_idx = {row['clip_id']: idx for idx, row in dataset.df.iterrows()}
 
 # Collect hard negatives during training epoch
 epoch_hard_negatives = []
 
 for batch in dataloader:
+    # Move data to device
+    wav, labels = wav.to(device), labels.to(device)
+
     # ... training code ...
 
     # Identify false positives (collect, don't update yet)
     with torch.no_grad():
         predictions = torch.sigmoid(logits)
+        # Move to CPU for processing
+        predictions_cpu = predictions.cpu()
+        labels_cpu = labels.cpu()
+
         threshold = config["val_threshold"]  # From config file
-        for pred, label, clip_id in zip(predictions, labels, clip_ids):
+        for pred, label, clip_id in zip(predictions_cpu, labels_cpu, clip_ids):
             if label == 0 and pred > threshold:
                 # Convert clip_id to dataset index
                 if clip_id in clip_id_to_idx:

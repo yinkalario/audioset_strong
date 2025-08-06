@@ -109,14 +109,18 @@ def main():
         collate_fn=audioset_collate_fn  # Use custom collate function
     )
 
-    # Step 5: Create model
-    print("\n5. Creating model...")
+    # Step 5: Create model and setup device
+    print("\n5. Creating model and setting up device...")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"   ✓ Using device: {device}")
+
     input_size = int(data_info['clip_length'] * data_info['sample_rate'])
-    model = simple_model(input_size)
+    model = simple_model(input_size).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.BCELoss()
 
     print(f"   ✓ Model created with input size: {input_size}")
+    print(f"   ✓ Model moved to device: {device}")
 
     # Step 6: Training loop demonstration
     print("\n6. Running training demonstration...")
@@ -141,6 +145,10 @@ def main():
             if batch_idx >= 3:  # Only process first 3 batches for demo
                 break
 
+            # Move data to device
+            wav = wav.to(device)
+            y = y.to(device)
+
             # Forward pass
             wav = wav.unsqueeze(1)  # Add channel dimension [B, 1, T]
             logits = model(wav)
@@ -157,16 +165,20 @@ def main():
             # Collect hard negatives (but don't update buffer yet)
             with torch.no_grad():
                 predictions = torch.sigmoid(logits.squeeze())
+                # Move to CPU for processing
+                predictions_cpu = predictions.cpu()
+                y_cpu = y.cpu()
+
                 # Find negative samples (y=0) with high predictions (false positives)
-                for pred, label, clip_id in zip(predictions, y, clip_ids):
+                for pred, label, clip_id in zip(predictions_cpu, y_cpu, clip_ids):
                     if label == 0 and pred > hard_neg_threshold:
                         # Convert clip_id to dataset index
                         if clip_id in clip_id_to_idx:
                             epoch_hard_negatives.append(clip_id_to_idx[clip_id])
 
             # Count positive/negative samples
-            pos_count = y.sum().item()
-            neg_count = len(y) - pos_count
+            pos_count = y_cpu.sum().item()
+            neg_count = len(y_cpu) - pos_count
 
             print(f"     Batch {batch_idx}: loss={loss.item():.4f}, "
                   f"pos={pos_count}, neg={neg_count}")
