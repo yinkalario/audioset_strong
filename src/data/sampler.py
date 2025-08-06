@@ -26,6 +26,26 @@ import torch
 from torch.utils.data import Sampler
 
 
+def audioset_collate_fn(batch):
+    """Custom collate function to handle variable-length label lists.
+
+    Args:
+        batch: List of tuples (wav, label, label_list, clip_id)
+
+    Returns:
+        Tuple of (wav_batch, label_batch, label_lists, clip_ids)
+    """
+    # Separate the batch elements
+    wavs, labels, label_lists, clip_ids = zip(*batch)
+
+    # Stack tensors and convert to tensors
+    wav_batch = torch.stack(wavs)  # All audio tensors must be same shape
+    label_batch = torch.tensor(labels)  # Binary labels
+
+    # Keep label_lists and clip_ids as lists (variable length is OK)
+    return wav_batch, label_batch, list(label_lists), list(clip_ids)
+
+
 class TwoTierBatchSampler(Sampler):
     """Two-tier batch sampler for AudioSet training."""
 
@@ -303,7 +323,7 @@ class TwoTierBatchSampler(Sampler):
         return batch_strong
 
     def _draw_weak_negatives(self) -> List[int]:
-        """Draw weak negative samples by √freq."""
+        """Draw weak negative samples by sqrt-freq."""
         batch_weak = []
 
         if self.weak_labels and self.weak_neg_per_batch > 0:

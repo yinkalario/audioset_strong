@@ -27,25 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data.data_processor import AudioSetDataProcessor  # noqa: E402
 from src.data.dataset import AudioSetDataset  # noqa: E402
-from src.data.sampler import TwoTierBatchSampler  # noqa: E402
-
-
-def custom_collate_fn(batch):
-    """Custom collate function to handle variable-length label lists."""
-    # Separate the batch elements
-    wavs, labels, label_lists, clip_ids = zip(*batch)
-
-    # Debug: Check shapes
-    print(f"Debug: Batch size: {len(wavs)}")
-    print(f"Debug: Audio shapes: {[w.shape for w in wavs[:3]]}")  # First 3 shapes
-    print(f"Debug: Label list lengths: {[len(ll) for ll in label_lists[:3]]}")
-
-    # Stack tensors and convert to tensors
-    wav_batch = torch.stack(wavs)
-    label_batch = torch.tensor(labels)
-
-    # Keep label_lists and clip_ids as lists (variable length)
-    return wav_batch, label_batch, list(label_lists), list(clip_ids)
+from src.data.sampler import TwoTierBatchSampler, audioset_collate_fn  # noqa: E402
 
 
 def simple_model(input_size: int, num_classes: int = 1) -> nn.Module:
@@ -124,7 +106,7 @@ def main():
         batch_sampler=sampler,
         num_workers=0,  # Set to 0 for debugging, increase for real training
         pin_memory=True,
-        collate_fn=custom_collate_fn  # Use custom collate function
+        collate_fn=audioset_collate_fn  # Use custom collate function
     )
 
     # Step 5: Create model
@@ -143,6 +125,9 @@ def main():
     # Get hard negative mining threshold from config
     hard_neg_threshold = config.get("val_threshold", 0.5)
     print(f"   ✓ Hard negative threshold: {hard_neg_threshold}")
+
+    # Create mapping from clip_id to dataset index for hard negative mining
+    clip_id_to_idx = {row['clip_id']: idx for idx, row in dataset.df.iterrows()}
 
     for epoch in range(2):  # Just 2 epochs for demonstration
         print(f"\n   Epoch {epoch + 1}/2")
@@ -175,7 +160,9 @@ def main():
                 # Find negative samples (y=0) with high predictions (false positives)
                 for pred, label, clip_id in zip(predictions, y, clip_ids):
                     if label == 0 and pred > hard_neg_threshold:
-                        epoch_hard_negatives.append(clip_id)
+                        # Convert clip_id to dataset index
+                        if clip_id in clip_id_to_idx:
+                            epoch_hard_negatives.append(clip_id_to_idx[clip_id])
 
             # Count positive/negative samples
             pos_count = y.sum().item()

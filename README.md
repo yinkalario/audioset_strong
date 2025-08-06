@@ -81,14 +81,14 @@ sampler = TwoTierBatchSampler(
 )
 
 # 4. Create DataLoader with custom collate function
-def custom_collate_fn(batch):
-    """Handle variable-length label lists."""
-    wavs, labels, label_lists, clip_ids = zip(*batch)
-    return torch.stack(wavs), torch.tensor(labels), list(label_lists), list(clip_ids)
+from src.data.sampler import audioset_collate_fn
 
-dataloader = DataLoader(dataset, batch_sampler=sampler, collate_fn=custom_collate_fn)
+dataloader = DataLoader(dataset, batch_sampler=sampler, collate_fn=audioset_collate_fn)
 
-# 5. Training loop
+# 5. Create mapping for hard negative mining
+clip_id_to_idx = {row['clip_id']: idx for idx, row in dataset.df.iterrows()}
+
+# 6. Training loop
 for epoch in range(num_epochs):
     sampler.set_epoch(epoch)  # Important for deterministic sampling
 
@@ -110,7 +110,9 @@ for epoch in range(num_epochs):
             threshold = config["val_threshold"]  # Use config parameter
             for pred, label, clip_id in zip(predictions, labels, clip_ids):
                 if label == 0 and pred > threshold:
-                    epoch_hard_negatives.append(clip_id)
+                    # Convert clip_id to dataset index for sampler
+                    if clip_id in clip_id_to_idx:
+                        epoch_hard_negatives.append(clip_id_to_idx[clip_id])
 
     # Update sampler's hard negative buffer at end of epoch
     if epoch_hard_negatives:
@@ -349,6 +351,9 @@ The sampler implements sophisticated negative sampling strategies:
 The sampler supports adaptive hard negative mining to improve model performance:
 
 ```python
+# Create mapping from clip_id to dataset index
+clip_id_to_idx = {row['clip_id']: idx for idx, row in dataset.df.iterrows()}
+
 # Collect hard negatives during training epoch
 epoch_hard_negatives = []
 
@@ -361,7 +366,9 @@ for batch in dataloader:
         threshold = config["val_threshold"]  # From config file
         for pred, label, clip_id in zip(predictions, labels, clip_ids):
             if label == 0 and pred > threshold:
-                epoch_hard_negatives.append(clip_id)
+                # Convert clip_id to dataset index
+                if clip_id in clip_id_to_idx:
+                    epoch_hard_negatives.append(clip_id_to_idx[clip_id])
 
 # Update buffer at end of epoch for efficiency
 if epoch_hard_negatives:
@@ -371,6 +378,7 @@ if epoch_hard_negatives:
 **Key Features:**
 - **End-of-Epoch Updates**: Efficient batch updates instead of per-step
 - **Config-Driven**: Threshold controlled by `val_threshold` in config
+- **Index Mapping**: Automatically converts clip_ids to dataset indices
 - **Dynamic Buffer**: Maintains a buffer of challenging negative samples
 - **Automatic Integration**: Seamlessly integrates with two-tier sampling
 - **Performance Boost**: Focuses training on difficult examples
