@@ -87,10 +87,10 @@ dataloader = DataLoader(dataset, batch_sampler=sampler)
 for epoch in range(num_epochs):
     sampler.set_epoch(epoch)  # Important for deterministic sampling
 
-    for batch_idx, (wav, labels, labels_mask, clip_ids) in enumerate(dataloader):
+    for batch_idx, (wav, labels, labels_list, clip_ids) in enumerate(dataloader):
         # wav: [batch_size, audio_length] - Audio waveforms
         # labels: [batch_size] - Binary labels (1=positive, 0=negative)
-        # labels_mask: [batch_size, num_labels] - Multi-label mask
+        # labels_list: [batch_size] - List of label lists for each sample
         # clip_ids: [batch_size] - Clip identifiers
 
         # Your training code here

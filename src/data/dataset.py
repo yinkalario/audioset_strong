@@ -16,7 +16,7 @@ Author: Yin Cao
 """
 import random
 from pathlib import Path
-from typing import Tuple, Set
+from typing import Tuple, List
 
 import pandas as pd
 import torch
@@ -68,7 +68,7 @@ class AudioSetDataset(torch.utils.data.Dataset):
         """Return number of positive samples (for epoch-based training)."""
         return len(self.pos_indices)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int, Set[str], str]:
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int, List[str], str]:
         """Get a single sample.
 
         Args:
@@ -77,7 +77,7 @@ class AudioSetDataset(torch.utils.data.Dataset):
         Returns:
             wav: Audio tensor [n_samples]
             y: Binary label (1 for target sound, 0 for other)
-            labels_mask: Set of negative label MIDs in this span
+            labels_mask: List of label MIDs in this span
             clip_id: Unique identifier for this clip
         """
         row = self.df.iloc[idx]
@@ -89,16 +89,16 @@ class AudioSetDataset(torch.utils.data.Dataset):
             print(f"Warning: Failed to load audio for {row['clip_id']}: {e}")
             # Return silence if loading fails
             wav = torch.zeros(self.n_samples, dtype=torch.float32)
-            return wav, int(row['is_positive']), set(row['labels']), row['clip_id']
+            return wav, int(row['is_positive']), list(row['labels']), row['clip_id']
 
-        # Convert labels list to set (handle both list and numpy array)
+        # Convert labels to list (handle both list and numpy array)
         labels = row['labels']
         if hasattr(labels, '__len__') and len(labels) > 0:
-            labels_set = set(labels)
+            labels_list = list(labels)
         else:
-            labels_set = set()
+            labels_list = []
 
-        return wav, int(row['is_positive']), labels_set, row['clip_id']
+        return wav, int(row['is_positive']), labels_list, row['clip_id']
 
     def _load_audio(self, row: pd.Series) -> torch.Tensor:
         """Load and process audio for a sample."""
