@@ -27,17 +27,19 @@ Input Files:
 Output Structure:
 - meta/{target_name}/raw/neg_weak/{target_name}_{dataset}_segments.csv
 
+Author: Yin Cao
+
 Usage:
     python generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
 
 Author: Yin Cao
 Date: 2025
 """
-
-import pandas as pd
 from typing import List, Set
 import argparse
 from pathlib import Path
+
+import pandas as pd
 
 # Target labels and names configuration
 target_labels = ['/t/dd00002']  # Baby cry, infant cry
@@ -81,17 +83,17 @@ def load_weak_segments_data(file_path: str) -> pd.DataFrame:
 def get_segments_with_target_labels(df: pd.DataFrame, target_labels: List[str]) -> Set[str]:
     """Get all segment IDs (YTID) that contain any of the target labels in positive_labels."""
     target_segments = set()
-    
+
     for _, row in df.iterrows():
         ytid = row['YTID']
         positive_labels = str(row['positive_labels'])
-        
+
         # Check if any target label is in the positive_labels string
         for target_label in target_labels:
             if target_label in positive_labels:
                 target_segments.add(ytid)
                 break  # Found one target label, no need to check others for this segment
-    
+
     return target_segments
 
 
@@ -99,14 +101,14 @@ def extract_negative_weak_samples(df: pd.DataFrame, target_labels: List[str]) ->
     """Extract all samples from segments that do NOT contain target labels."""
     # Get segments that contain target labels
     positive_segments = get_segments_with_target_labels(df, target_labels)
-    
+
     # Filter out all segments that contain target labels
     negative_df = df[~df['YTID'].isin(positive_segments)].copy()
-    
+
     print(f"  Total segments in dataset: {len(df)}")
     print(f"  Segments with target labels: {len(positive_segments)}")
     print(f"  Negative segments: {len(negative_df)}")
-    
+
     return negative_df
 
 
@@ -120,7 +122,7 @@ def save_weak_metadata(df: pd.DataFrame, output_path):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     # Save CSV with header
-    df.to_csv(output_path, index=False, 
+    df.to_csv(output_path, index=False,
               columns=['YTID', 'start_seconds', 'end_seconds', 'positive_labels'])
 
     print(f"  Saved {len(df)} negative weak segments to {output_path}")
@@ -142,7 +144,7 @@ def process_file(input_file: str, target_labels: List[str], target_name: str, ou
 
     # Determine file type and generate output filename
     base_name = Path(input_file).stem
-    
+
     # Create target-specific output directory with raw/neg_weak structure
     target_output_dir = Path(output_dir) / target_name / 'raw' / 'neg_weak'
 

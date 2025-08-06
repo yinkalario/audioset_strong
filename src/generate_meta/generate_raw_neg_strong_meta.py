@@ -19,6 +19,8 @@ Process:
 3. Extract all events from segments WITHOUT target sounds
 4. Save negative samples with temporal and label information
 
+Author: Yin Cao
+
 Output Structure:
 - meta/{target_name}/raw/neg_strong/{target_name}_{dataset}_strong.tsv
 
@@ -28,11 +30,11 @@ Usage:
 Author: Yin Cao
 Date: 2025
 """
-
-import pandas as pd
 from typing import List, Set
 import argparse
 from pathlib import Path
+
+import pandas as pd
 
 # Target labels and names configuration
 target_labels = ['/t/dd00002']  # Baby cry, infant cry

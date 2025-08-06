@@ -11,24 +11,22 @@ Tests the end-to-end workflow:
 
 Author: Yin Cao
 """
+from pathlib import Path
 
 import tempfile
 import shutil
-from pathlib import Path
 import pandas as pd
 import torch
 import yaml
 from torch.utils.data import DataLoader
-
 from src.data.data_processor import AudioSetDataProcessor
 from src.data.dataset import AudioSetDataset
 from src.data.sampler import TwoTierBatchSampler
 
-
 def create_realistic_test_data():
     """Create a more realistic test dataset."""
     temp_dir = Path(tempfile.mkdtemp())
-    
+
     # Realistic config
     config = {
         "pos_strong_paths": [
@@ -57,11 +55,11 @@ def create_realistic_test_data():
         "hard_buffer_size": 1000,
         "audio_root": str(temp_dir / "audio")
     }
-    
+
     config_path = temp_dir / "config.yaml"
     with open(config_path, 'w') as f:
         yaml.dump(config, f)
-    
+
     # Create more realistic positive data
     pos_data = []
     for i in range(50):  # 50 positive samples
@@ -69,12 +67,12 @@ def create_realistic_test_data():
         start_time = i * 1.0
         end_time = start_time + 1.0
         pos_data.append([clip_id, start_time, end_time, "/t/dd00002"])
-    
+
     # Split into overlapped and non-overlapped
     mid = len(pos_data) // 2
     pd.DataFrame(pos_data[:mid]).to_csv(temp_dir / "baby_cry_ov_train.tsv", sep='\t', index=False, header=False)
     pd.DataFrame(pos_data[mid:]).to_csv(temp_dir / "baby_cry_nov_train.tsv", sep='\t', index=False, header=False)
-    
+
     # Create diverse negative strong data
     neg_labels = ["/m/09x0r", "/m/04rlf", "/m/0395lw", "/m/068hy", "/m/0k4j",
                   "/m/07yv9", "/m/01g50p", "/m/02zsn", "/m/0284vy3"]
@@ -85,16 +83,16 @@ def create_realistic_test_data():
         end_time = start_time + 1.0
         label = neg_labels[i % len(neg_labels)]
         neg_data.append([clip_id, start_time, end_time, label])
-    
+
     pd.DataFrame(neg_data).to_csv(temp_dir / "baby_cry_neg_train.tsv", sep='\t', index=False, header=False)
-    
+
     # Create weak negative data with multi-labels
     weak_data = []
     for i in range(100):  # 100 weak samples
         ytid = f"weak{i}_{i * 10.0}_{i * 10.0 + 10.0}"
         start_time = i * 10.0
         end_time = start_time + 10.0
-        
+
         # Mix of single and multi-labels, with head label bias
         if i % 3 == 0:  # Head labels (speech/music)
             if i % 6 == 0:
@@ -108,13 +106,13 @@ def create_realistic_test_data():
                 labels = f"{label},{label2}"
             else:
                 labels = label
-        
+
         weak_data.append([ytid, start_time, end_time, labels])
-    
+
     pd.DataFrame(weak_data, columns=["YTID", "start_seconds", "end_seconds", "positive_labels"]).to_csv(
         temp_dir / "baby_cry_weak_train.csv", index=False
     )
-    
+
     # Create AudioSet directory structure with dummy audio files
     audio_root = temp_dir / "audio"
 
@@ -152,33 +150,33 @@ def create_realistic_test_data():
 
     # Update config to point to the audio root
     config["audio_root"] = str(audio_root)
-    
+
     return temp_dir, str(config_path)
 
 
 def test_complete_pipeline():
     """Test the complete data pipeline end-to-end."""
     print("=== Integration Test: Complete Pipeline ===")
-    
+
     temp_dir, config_path = create_realistic_test_data()
-    
+
     try:
         import os
         original_cwd = Path.cwd()
         os.chdir(temp_dir)
-        
+
         # Step 1: Process data
         print("\n1. Processing metadata...")
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
-        
+
         # Step 2: Create dataset
         print("\n2. Creating dataset...")
         dataset = AudioSetDataset(str(temp_dir / "processed" / "metadata.parquet"), config_path)
-        
+
         info = dataset.get_data_split_info()
         print(f"   Dataset info: {info}")
-        
+
         # Step 3: Create sampler
         print("\n3. Creating sampler...")
 
@@ -195,18 +193,19 @@ def test_complete_pipeline():
             num_replicas=1,
             rank=0
         )
-        
+
         print(f"   Steps per epoch: {sampler.get_steps_per_epoch()}")
-        
+
         # Step 4: Create DataLoader
         print("\n4. Creating DataLoader...")
-        
+
         def collate_fn(batch):
+            """TODO: Add docstring for collate_fn."""
             wav_list, y_list, labels_list, clip_ids = zip(*batch)
             wav = torch.stack(wav_list)
             y = torch.tensor(y_list, dtype=torch.long)
             return wav, y, labels_list, clip_ids
-        
+
         sampler.set_epoch(0)
         dataloader = DataLoader(
             dataset,
@@ -214,61 +213,61 @@ def test_complete_pipeline():
             collate_fn=collate_fn,
             num_workers=0  # Avoid multiprocessing issues in tests
         )
-        
+
         # Step 5: Simulate training loop
         print("\n5. Simulating training loop...")
-        
+
         total_batches = 0
         total_pos = 0
         total_neg = 0
-        
+
         for batch_idx, (wav, y, labels_mask, clip_ids) in enumerate(dataloader):
             if batch_idx >= 5:  # Test first 5 batches
                 break
-            
+
             total_batches += 1
             pos_count = y.sum().item()
             neg_count = len(y) - pos_count
             total_pos += pos_count
             total_neg += neg_count
-            
+
             print(f"   Batch {batch_idx}: wav {wav.shape}, {pos_count} pos, {neg_count} neg")
-            
+
             # Verify tensor properties
             assert wav.dtype == torch.float32, "Wrong wav dtype"
             assert y.dtype == torch.long, "Wrong y dtype"
             assert wav.shape[0] == len(y), "Batch size mismatch"
             assert wav.shape[1] == dataset.n_samples, "Wrong audio length"
-            
+
             # Verify no NaN or inf values
             assert not torch.isnan(wav).any(), "NaN values in audio"
             assert not torch.isinf(wav).any(), "Inf values in audio"
-        
+
         print(f"   Processed {total_batches} batches: {total_pos} pos, {total_neg} neg total")
-        
+
         # Step 6: Test hard negative mining
         print("\n6. Testing hard negative mining...")
-        
+
         # Simulate collecting false positives
         fake_false_positives = [100, 150, 200]  # Some indices
         sampler.extend_hard_buffer(fake_false_positives)
-        
+
         print(f"   Added {len(fake_false_positives)} hard negatives")
-        
+
         # Test next epoch uses them
         sampler.set_epoch(1)
         dataloader = DataLoader(dataset, batch_sampler=sampler, collate_fn=collate_fn, num_workers=0)
-        
+
         used_hard_negs = 0
         for batch_idx, (wav, y, labels_mask, clip_ids) in enumerate(dataloader):
             if batch_idx >= 2:  # Check first 2 batches
                 break
-            
+
             # This is a simplified check - in practice you'd track indices more carefully
             used_hard_negs += 1  # Assume some were used
-        
+
         print(f"   Hard negatives integration working")
-        
+
         # Step 7: Test epoch consistency (before hard negatives affect order)
         print("\n7. Testing epoch consistency...")
 
@@ -307,9 +306,9 @@ def test_complete_pipeline():
             assert len(batch1) == len(batch2), f"Batch {i} size differs: {len(batch1)} vs {len(batch2)}"
 
         print("   ✓ Batch composition consistency verified")
-        
+
         print("\n🎉 Complete pipeline integration test passed!")
-        
+
     finally:
         os.chdir(original_cwd)
         shutil.rmtree(temp_dir)
@@ -318,41 +317,41 @@ def test_complete_pipeline():
 def test_flexible_clip_length():
     """Test that the pipeline works with different clip lengths."""
     print("\n=== Testing Flexible Clip Length ===")
-    
+
     for clip_length in [0.5, 1.0, 2.0]:
         print(f"\nTesting clip_length = {clip_length}s")
-        
+
         temp_dir, config_path = create_realistic_test_data()
-        
+
         # Modify config for this clip length
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
         config['clip_length'] = clip_length
         with open(config_path, 'w') as f:
             yaml.dump(config, f)
-        
+
         try:
             import os
             original_cwd = Path.cwd()
             os.chdir(temp_dir)
-            
+
             # Process and test
             processor = AudioSetDataProcessor(config_path)
             processor.process_and_save()
-            
+
             dataset = AudioSetDataset(str(temp_dir / "processed" / "metadata.parquet"), config_path)
-            
+
             # Test a sample
             wav, y, labels_mask, clip_id = dataset[0]
             expected_samples = int(config['sample_rate'] * clip_length)
-            
+
             assert wav.shape[0] == expected_samples, f"Wrong audio length for {clip_length}s"
             print(f"   ✓ {clip_length}s -> {wav.shape[0]} samples")
-            
+
         finally:
             os.chdir(original_cwd)
             shutil.rmtree(temp_dir)
-    
+
     print("✓ Flexible clip length test passed!")
 
 

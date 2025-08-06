@@ -15,7 +15,6 @@ Key Features:
 
 Author: Yin Cao
 """
-
 import argparse
 import random
 from math import sqrt
@@ -28,7 +27,7 @@ import yaml
 
 class AudioSetDataProcessor:
     """Processes AudioSet metadata for training."""
-    
+
     def __init__(self, config_path: str, filter_missing_audio: bool = True):
         """Initialize with configuration.
 
@@ -123,9 +122,9 @@ class AudioSetDataProcessor:
             if not path_obj.exists():
                 print(f"Warning: {path} not found, skipping")
                 continue
-                
+
             print(f"Loading strong metadata: {path}")
-            
+
             # Load TSV, skip header if present
             try:
                 # Try reading first line to detect header
@@ -140,12 +139,12 @@ class AudioSetDataProcessor:
                     df = pd.read_csv(path, sep='\t', names=[
                         'clip_id', 'start_time', 'end_time', 'label'
                     ])
-            except:
+            except Exception:
                 # Fallback: assume no header
                 df = pd.read_csv(path, sep='\t', names=[
                     'clip_id', 'start_time', 'end_time', 'label'
                 ])
-            
+
             # Add metadata
             df['is_positive'] = is_positive
             df['source_file'] = path_obj.name
@@ -162,14 +161,14 @@ class AudioSetDataProcessor:
                 df['labels'] = df['label'].apply(lambda x: [x])
 
             all_data.append(df)
-        
+
         if not all_data:
             return pd.DataFrame()
-        
+
         result = pd.concat(all_data, ignore_index=True)
         print(f"Loaded {len(result)} strong samples (positive={is_positive})")
         return result
-    
+
     def load_weak_metadata(self, paths: List[str]) -> pd.DataFrame:
         """Load weak labeling CSV files."""
         all_data = []
@@ -179,20 +178,20 @@ class AudioSetDataProcessor:
             if not path_obj.exists():
                 print(f"Warning: {path} not found, skipping")
                 continue
-                
+
             print(f"Loading weak metadata: {path}")
-            
+
             # Load CSV with header
             df = pd.read_csv(path)
-            
+
             # Rename columns to standard names
             df = df.rename(columns={
                 'YTID': 'clip_id',
-                'start_seconds': 'start_time', 
+                'start_seconds': 'start_time',
                 'end_seconds': 'end_time',
                 'positive_labels': 'label'
             })
-            
+
             # Add metadata
             df['is_positive'] = False  # All weak samples are negative
             df['source_file'] = path_obj.name
@@ -205,20 +204,20 @@ class AudioSetDataProcessor:
             df['labels'] = df['label'].apply(self._parse_labels)
 
             all_data.append(df)
-        
+
         if not all_data:
             return pd.DataFrame()
-        
+
         result = pd.concat(all_data, ignore_index=True)
         print(f"Loaded {len(result)} weak samples")
         return result
-    
+
     def _parse_labels(self, label_str: str) -> List[str]:
         """Parse comma-separated labels."""
         if pd.isna(label_str) or label_str == '':
             return []
         return [label.strip() for label in str(label_str).split(',')]
-    
+
     def apply_head_trimming(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply head-class trimming to weak negative samples.
 
@@ -244,6 +243,7 @@ class AudioSetDataProcessor:
 
         # Check if any label in the sample is a head label
         def has_head_label(labels: List[str]) -> bool:
+            """TODO: Add docstring for has_head_label."""
             return any(label in self.head_labels for label in labels)
 
         target_df['is_head'] = target_df['labels'].apply(has_head_label)
@@ -272,7 +272,7 @@ class AudioSetDataProcessor:
         print(f"Total samples after head trimming: {len(result)}")
 
         return result
-    
+
     def build_label_mappings(self, df: pd.DataFrame) -> Tuple[Dict, Dict]:
         """Build label-to-indices mappings for sampling."""
         strong_neg_map = {}
@@ -285,45 +285,45 @@ class AudioSetDataProcessor:
                 if label not in strong_neg_map:
                     strong_neg_map[label] = []
                 strong_neg_map[label].append(idx)
-        
-        # Weak negative mappings  
+
+        # Weak negative mappings
         weak_neg_df = df[df['data_type'] == 'weak']
         for idx, row in weak_neg_df.iterrows():
             for label in row['labels']:
                 if label not in weak_neg_map:
                     weak_neg_map[label] = []
                 weak_neg_map[label].append(idx)
-        
+
         # Handle rare labels
         strong_neg_map = self._handle_rare_labels(strong_neg_map)
         weak_neg_map = self._handle_rare_labels(weak_neg_map)
-        
+
         print(f"Strong negative labels: {len(strong_neg_map)}")
         print(f"Weak negative labels: {len(weak_neg_map)}")
-        
+
         return strong_neg_map, weak_neg_map
-    
+
     def _handle_rare_labels(self, label_map: Dict) -> Dict:
         """Bucket ultra-rare labels together."""
         rare_indices = []
         labels_to_remove = []
-        
+
         for label, indices in label_map.items():
             if len(indices) < self.completion_rare_cutoff:
                 rare_indices.extend(indices)
                 labels_to_remove.append(label)
-        
+
         # Remove rare labels and add them to "other_rare" bucket
         for label in labels_to_remove:
             del label_map[label]
-        
+
         if rare_indices:
             label_map["other_rare"] = rare_indices
             print(f"Bucketed {len(labels_to_remove)} rare labels into 'other_rare' "
                   f"({len(rare_indices)} samples)")
-        
+
         return label_map
-    
+
     def compute_sqrt_weights(self, label_map: Dict) -> Tuple[List[str], List[float]]:
         """Compute √-frequency weights for balanced sampling."""
         if not label_map:
@@ -331,18 +331,18 @@ class AudioSetDataProcessor:
 
         labels = list(label_map.keys())
         counts = [len(label_map[label]) for label in labels]
-        
+
         # Compute √-frequency weights
         sqrt_weights = [sqrt(count) for count in counts]
         total_weight = sum(sqrt_weights)
-        
+
         if total_weight == 0:
             probs = [1.0 / len(labels)] * len(labels)
         else:
             probs = [w / total_weight for w in sqrt_weights]
-        
+
         return labels, probs
-    
+
     def process_and_save(self) -> None:
         """Main processing pipeline."""
         print("=== AudioSet Data Processing ===")
@@ -357,7 +357,7 @@ class AudioSetDataProcessor:
         neg_weak = self.load_weak_metadata(
             self.config["neg_weak_paths"]
         )
-        
+
         # Combine all data
         all_data = []
         if not pos_strong.empty:
@@ -366,19 +366,19 @@ class AudioSetDataProcessor:
             all_data.append(neg_strong)
         if not neg_weak.empty:
             all_data.append(neg_weak)
-        
+
         if not all_data:
             raise ValueError("No data loaded!")
-        
+
         df = pd.concat(all_data, ignore_index=True)
         print(f"Total samples before processing: {len(df)}")
-        
+
         # Apply head trimming
         df = self.apply_head_trimming(df)
-        
+
         # Build label mappings
         strong_neg_map, weak_neg_map = self.build_label_mappings(df)
-        
+
         # Compute sampling weights
         strong_labels, strong_probs = self.compute_sqrt_weights(strong_neg_map)
         weak_labels, weak_probs = self.compute_sqrt_weights(weak_neg_map)

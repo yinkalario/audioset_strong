@@ -1,44 +1,177 @@
-# AudioSet Strong Labeling Dataset Processor
+# AudioSet Data Pipeline
 
-This project provides tools for extracting and analyzing specific sound types from the AudioSet strong labeling dataset. It focuses on temporally-strong labeled audio events with precise start and end times, allowing for detailed analysis of sound event distributions and temporal overlaps.
+A robust and efficient data processing pipeline for AudioSet training with advanced sampling strategies, missing file handling, and comprehensive analysis tools.
 
-## Overview
+## 🎯 Overview
 
-AudioSet strong labeling data contains temporally precise annotations for audio events, marking the exact start and end times of sound occurrences within 10-second audio clips. This project enables:
+This project provides a complete pipeline for working with AudioSet strong labeling data, from raw metadata processing to training-ready datasets with intelligent sampling strategies. It focuses on temporally-precise audio events with exact start and end times, enabling detailed sound event analysis and robust model training.
 
-- **Target Sound Extraction**: Extract specific sound types (e.g., baby cry, gunshots, snoring) from the full dataset
-- **Overlap Analysis**: Categorize events into overlapped and non-overlapped based on temporal co-occurrence with other sounds
-- **Distribution Analysis**: Analyze label distributions by duration rather than simple event counts
-- **Visualization**: Generate comprehensive plots showing dataset imbalances and statistics
+### Key Features
 
-## Dataset Information
+- **Complete Pipeline**: From raw AudioSet metadata to training-ready datasets
+- **Smart Missing File Handling**: Automatically filters unavailable YouTube videos
+- **Advanced Sampling**: Two-tier batch sampling with hard negative mining
+- **Target Sound Extraction**: Extract specific sound types (baby cry, gunshots, snoring)
+- **Overlap Analysis**: Categorize events based on temporal co-occurrence
+- **Multi-GPU Support**: Deterministic data partitioning for distributed training
+- **Comprehensive Analysis**: Duration-based distribution analysis and visualization
+
+## 🚀 Quickstart
+
+### Prerequisites
+
+1. **Download AudioSet data** (strong labels + audio files)
+2. **Set up environment**: `bash scripts/create_env.sh && conda activate audioset_strong`
+3. **Update audio path** in `configs/baby_cry.yaml`
+
+### Step 1: Generate Training Metadata
+
+```bash
+# Process all sound types and generate training metadata
+bash scripts/process_audioset_metadata.sh
+```
+
+This creates organized metadata files:
+```
+meta/
+├── baby_cry/
+│   ├── raw/pos/          # Raw positive labels
+│   ├── raw/neg_strong/   # Raw negative strong labels
+│   ├── raw/neg_weak/     # Raw negative weak labels
+│   └── seg1s/            # 1-second segmented clips
+└── processed/            # Training-ready data
+    ├── metadata.parquet  # Efficient format for training
+    ├── metadata.csv      # Human-readable format
+    └── label_mappings.pkl # Label mappings
+```
+
+### Step 2: Train a Model
+
+```python
+import yaml
+from src.data.data_processor import AudioSetDataProcessor
+from src.data.dataset import AudioSetDataset
+from src.data.sampler import TwoTierBatchSampler
+from torch.utils.data import DataLoader
+
+# 1. Process metadata (handles missing files automatically)
+processor = AudioSetDataProcessor("configs/baby_cry.yaml")
+processor.process_and_save()
+
+# 2. Create dataset
+dataset = AudioSetDataset(
+    "meta/baby_cry/processed/metadata.parquet",
+    "configs/baby_cry.yaml"
+)
+
+# 3. Create advanced sampler with two-tier negative sampling
+with open("configs/baby_cry.yaml") as f:
+    config = yaml.safe_load(f)
+
+sampler = TwoTierBatchSampler(
+    dataset=dataset,
+    batch_size_per_device=config["batch_size"],
+    metadata_path="meta/baby_cry/processed/metadata.parquet",
+    mappings_path="meta/baby_cry/processed/label_mappings.pkl",
+    config_path="configs/baby_cry.yaml",
+    num_replicas=1,  # Number of GPUs
+    rank=0           # Current GPU rank
+)
+
+# 4. Create DataLoader
+dataloader = DataLoader(dataset, batch_sampler=sampler)
+
+# 5. Training loop
+for epoch in range(num_epochs):
+    sampler.set_epoch(epoch)  # Important for deterministic sampling
+
+    for batch_idx, (wav, labels, labels_mask, clip_ids) in enumerate(dataloader):
+        # wav: [batch_size, audio_length] - Audio waveforms
+        # labels: [batch_size] - Binary labels (1=positive, 0=negative)
+        # labels_mask: [batch_size, num_labels] - Multi-label mask
+        # clip_ids: [batch_size] - Clip identifiers
+
+        # Your training code here
+        pass
+```
+
+### Step 3: Analyze Datasets (Optional)
+
+```bash
+# Generate comprehensive analysis of all AudioSet datasets
+bash scripts/analyze_all_datasets.sh
+```
+
+## 📦 Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yinkalario/audioset_strong.git
+   cd audioset_strong
+   ```
+
+2. **Set up environment** (requires conda):
+   ```bash
+   bash scripts/create_env.sh
+   conda activate audioset_strong
+   ```
+
+The script will automatically:
+- Create a conda environment named `audioset_strong`
+- Install all required packages from `requirements.txt`
+- Handle environment cleanup if it already exists
+
+## 📊 Dataset Information
 
 The AudioSet strong labeling dataset includes:
 - **Training set**: 103,463 clips with 934,821 sound events across 447 unique labels
 - **Evaluation set**: 16,996 clips with 139,538 sound events across 416 unique labels
 - **Framed evaluation set**: 14,203 clips with both positive and negative labels on 960ms frames
 
-## AudioSet Audio Directory Structure
+## 🔧 Core Components
 
-The AudioSet audio files are organized in a specific directory structure:
+### 1. Data Processor (`src/data/data_processor.py`)
+Transforms raw AudioSet metadata into training-ready format:
+- Loads strong/weak label files with automatic format detection
+- Applies head-class trimming (unbalanced data only) to reduce common class dominance
+- Handles missing audio files automatically by filtering unavailable YouTube videos
+- Generates label mappings and √-frequency sampling weights
+- Outputs dual format: CSV for inspection, Parquet for efficient loading
+
+### 2. Dataset (`src/data/dataset.py`)
+PyTorch Dataset with intelligent audio loading:
+- **Configurable clip duration**: Supports any clip length (0.5s, 1s, 2s, etc.)
+- **Smart cropping**: Random cropping for weak labels, exact timing for strong labels
+- **Robust audio loading**: Automatic resampling and normalization
+- **Missing file handling**: Gracefully handles unavailable audio files
+- **Multi-format support**: Loads from CSV or Parquet metadata
+
+### 3. Sampler (`src/data/sampler.py`)
+Advanced batch sampler with two-tier negative sampling:
+- **Fixed batch composition**: Configurable positive/negative ratios (default: 25%/25%/50%)
+- **Two-tier negative sampling**: Balanced (Tier A/B) + hard negatives
+- **√-frequency weighting**: Prevents over-sampling of very common labels
+- **Label coverage guarantees**: Ensures all labels seen per epoch
+- **Hard negative mining**: Adaptive focus on challenging examples
+- **Multi-GPU support**: Deterministic data partitioning for distributed training
+
+## 📁 AudioSet Directory Structure
+
+The pipeline expects AudioSet audio files in this structure:
 
 ```
 audio_root/
 ├── unbalanced_train_segments/
 │   ├── unbalanced_train_segments_part00/
 │   │   ├── Y-0049eXE2Zc.wav
-│   │   ├── Y-004VvnOKJE.wav
 │   │   └── ...
 │   ├── unbalanced_train_segments_part01/
-│   │   └── ...
 │   └── ... (up to part40)
 ├── balanced_train_segments/
 │   ├── Y00M9FhCet6s.wav
-│   ├── Y00QiuqBbiI.wav
 │   └── ...
 └── eval_segments/
     ├── Y007P6bFgRCU.wav
-    ├── Y00A8LzmKCE.wav
     └── ...
 ```
 
@@ -131,101 +264,105 @@ The `audio_root` should point to the directory containing the AudioSet audio str
 
 **Note**: If audio files are not available locally (e.g., stored on a remote server), the pipeline will still work but will show warnings about missing audio files. Missing files are automatically filtered from the training data.
 
-## Usage
+## ⚙️ Configuration
 
-### Quick Start (Recommended)
+Key configuration parameters in `configs/baby_cry.yaml`:
 
-For processing all sound types automatically, use the provided bash script:
+```yaml
+# Audio data path
+audio_root: "/path/to/your/audioset/audio"
+
+# Metadata paths
+pos_strong_paths: ["meta/baby_cry/seg1s/baby_cry_ov_train.tsv"]
+neg_strong_paths: ["meta/baby_cry/seg1s/baby_cry_neg_train.tsv"]
+weak_paths: ["meta/baby_cry/seg1s/baby_cry_weak_train.csv"]
+processed_data_dir: "meta/baby_cry/processed"
+
+# Audio parameters
+sample_rate: 16000
+clip_length: 1.0  # seconds
+
+# Head trimming (unbalanced data only)
+head_labels: ["/m/09x0r", "/m/04rlf"]  # Speech, Music
+head_keep_frac: 0.2
+completion_rare_cutoff: 10
+
+# Batch composition
+batch_size: 16
+pos_per_batch_frac: 0.25      # 25% positive samples
+strong_neg_per_batch_frac: 0.25  # 25% strong negatives
+weak_neg_per_batch_frac: 0.5   # 50% weak negatives
+
+# Two-tier sampling
+tierA_fraction: 0.6    # 60% Tier A, 40% Tier B
+primary_fraction: 0.9  # 90% primary sampling, 10% completion
+```
+
+## 🎯 Advanced Features
+
+### Two-Tier Batch Sampling
+The sampler implements sophisticated negative sampling strategies:
+
+- **Tier A**: High-frequency labels with √-frequency weighting
+- **Tier B**: Low-frequency labels with uniform sampling
+- **Completion Sampling**: Ensures all labels are seen per epoch
+- **Hard Negative Mining**: Dynamically focuses on challenging examples
+
+### Smart Missing File Handling
+The pipeline automatically handles missing YouTube videos:
+
+1. **Discovery**: Scans AudioSet directories for available files
+2. **Filtering**: Removes samples with missing audio files
+3. **Reporting**: Shows how many files were filtered
+4. **Continuation**: Training proceeds with available data
+
+### Head-Class Trimming
+Applied only to unbalanced training data to reduce over-representation:
+
+- **Multi-label logic**: Keeps samples with ANY head label
+- **Configurable**: Adjustable keep fraction and rare label cutoff
+- **Preserves balance**: Maintains rare label representation
+
+### Multi-GPU Support
+Built-in support for distributed training:
+
+- **Deterministic partitioning**: No sample overlap between ranks
+- **Consistent batch composition**: Same ratios across all GPUs
+- **Efficient scaling**: Linear scaling to multiple devices
+
+## 📊 Analysis Tools
+
+The pipeline includes comprehensive analysis tools for understanding dataset characteristics:
+
+### Strong Label Analysis
+Duration-based analysis of temporally-precise labels:
 
 ```bash
-bash scripts/process_audioset_metadata.sh
+# Analyze individual datasets
+python src/analyze_meta/analyze_single_strong_dataset.py \
+    --file meta/audioset_train_strong.tsv \
+    --mid-to-display meta/mid_to_display_name.tsv \
+    --output-prefix out/train_analysis
+
+# Analyze all strong datasets
+bash scripts/analyze_all_datasets.sh
 ```
 
-For analyzing label distributions (both strong and weak), use:
+### Weak Label Analysis
+Occurrence-based analysis of segment-level labels:
 
 ```bash
-bash scripts/analyze_label_distributions.sh
+# Individual dataset analysis
+python src/analyze_meta/analyze_weak_label_distribution.py \
+    --train-file meta/unbalanced_train_segments.csv \
+    --mid-to-display meta/mid_to_display_name.tsv
 ```
 
-This script will automatically:
-1. Generate raw positive metadata for baby_cry, gun, and snore sounds
-2. Generate raw negative strong metadata for all three sound types
-3. Generate raw negative weak metadata for all three sound types
-4. Generate 1-second segmented positive metadata
-5. Generate 1-second segmented negative metadata
-
-### Manual Processing (Advanced)
-
-If you need to process individual sound types or customize the workflow:
-
-#### 1. Extract Raw Positive Metadata
-
-The script `generate_raw_target_meta.py` extracts specific sound types and categorizes them into overlapped and non-overlapped events.
-
-**Configuration**: Edit the target labels at the top of the script:
-
-```python
-# For baby cry
-target_labels = ['/t/dd00002']
-target_name = 'baby_cry'
-
-# For gun sounds (multiple related labels)
-target_labels = ['/m/032s66', '/m/04zjc', '/m/073cg4']  # Gunshot, Machine gun, Cap gun
-target_name = 'gun'
-
-# For snore sounds
-target_labels = ['/m/01d3sd', '/m/07q0yl5']  # Snoring, Snort
-target_name = 'snore'
-```
-
-**Run extraction**:
-```bash
-python src/generate_raw_target_meta.py --input-dir meta --output-dir meta
-```
-
-#### 2. Extract Raw Negative Strong Metadata
-
-Generate negative strong samples (clips without target sounds):
-
-```bash
-python src/generate_raw_neg_strong_meta.py --input-dir meta --output-dir meta
-```
-
-#### 3. Extract Raw Negative Weak Metadata
-
-Generate negative weak samples (10-second segments without target sounds):
-
-```bash
-python src/generate_raw_neg_weak_meta.py --input-dir meta --output-dir meta
-```
-
-#### 4. Generate Segmented Positive Metadata
-
-Create 1-second segments from positive samples:
-
-```bash
-python src/generate_seg_target_meta.py
-```
-
-#### 5. Generate Segmented Negative Metadata
-
-Create 1-second segments from negative samples:
-
-```bash
-python src/generate_seg_neg_strong_meta.py
-```
-
-#### 6. Analyze Label Distribution (Optional)
-
-**Strong Label Distribution** (by duration):
-```bash
-python src/analyze_strong_label_distribution.py --train-file meta/audioset_train_strong.tsv --mid-to-display meta/mid_to_display_name.tsv
-```
-
-**Weak Label Distribution** (by occurrence count):
-```bash
-python src/analyze_weak_label_distribution.py --train-file meta/unbalanced_train_segments.csv --mid-to-display meta/mid_to_display_name.tsv
-```
+### Output Visualizations
+- **6-panel analysis**: Distribution, imbalance, coverage, temporal patterns
+- **Top-N detailed plots**: Focus on most/least common labels
+- **Statistics export**: CSV files with complete metrics
+- **Cross-dataset comparison**: Unified analysis across train/eval splits
 
 **Complete Dataset Analysis** (analyze all 6 datasets separately):
 ```bash
@@ -380,43 +517,13 @@ YxlGt805lTA_30000	0.960	1.920	/m/07rgkc5	NOT_PRESENT
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Makefile Targets
-
-The project includes convenient Makefile targets for cleaning generated files:
-
-```bash
-# Show all available targets
-make help
-
-# Clean cache files, temp files, etc. (preserves metadata and analysis)
-make clean
-
-# Remove generated metadata files (preserves original AudioSet files)
-make clean-metadata
-
-# Remove all analysis output files
-make clean-analysis
-
-# Clean everything (cache, metadata, and analysis)
-make clean-all
-
-# Sync with main branch
-make sync
-```
-
-**Target Details:**
-- `clean`: Removes Python cache, .DS_Store, pytest cache, etc.
-- `clean-metadata`: Removes generated .tsv/.csv files in subdirectories (preserves original AudioSet files)
-- `clean-analysis`: Removes the entire `out/` directory
-- `clean-all`: Runs all cleaning targets
-
 ## Citation
 
 If you use this code in your research, please cite:
 
 ```bibtex
-@misc{audioset_strong_processor,
-  title={AudioSet Strong Labeling Dataset Processor},
+@misc{audioset_data_pipeline,
+  title={AudioSet Data Pipeline: Advanced Training Pipeline for Audio Event Detection},
   author={Yin Cao},
   year={2025},
   url={https://github.com/yinkalario/audioset_strong}

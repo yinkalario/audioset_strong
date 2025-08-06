@@ -11,23 +11,21 @@ Tests the complete data pipeline including:
 
 Author: Yin Cao
 """
+from pathlib import Path
 
 import tempfile
 import shutil
-from pathlib import Path
 import pandas as pd
 import torch
 import yaml
-
 from src.data.data_processor import AudioSetDataProcessor
 from src.data.dataset import AudioSetDataset
 from src.data.sampler import TwoTierBatchSampler
 
-
 def create_test_setup():
     """Create a complete test setup with processed data."""
     temp_dir = Path(tempfile.mkdtemp())
-    
+
     # Create config
     config = {
         "pos_strong_paths": [str(temp_dir / "pos.tsv")],
@@ -49,11 +47,11 @@ def create_test_setup():
         "hard_buffer_size": 100,
         "audio_root": str(temp_dir / "audio")
     }
-    
+
     config_path = temp_dir / "config.yaml"
     with open(config_path, 'w') as f:
         yaml.dump(config, f)
-    
+
     # Create test metadata
     pos_data = [
         ["pos1_0.0_0.5", 0.0, 0.5, "/t/dd00002"],
@@ -61,7 +59,7 @@ def create_test_setup():
         ["pos3_1.0_1.5", 1.0, 1.5, "/t/dd00002"],
     ]
     pd.DataFrame(pos_data).to_csv(temp_dir / "pos.tsv", sep='\t', index=False, header=False)
-    
+
     neg_data = [
         ["neg1_0.0_0.5", 0.0, 0.5, "/m/09x0r"],
         ["neg2_0.5_1.0", 0.5, 1.0, "/m/04rlf"],
@@ -70,7 +68,7 @@ def create_test_setup():
         ["neg5_2.0_2.5", 2.0, 2.5, "/m/0k4j"],
     ]
     pd.DataFrame(neg_data).to_csv(temp_dir / "neg.tsv", sep='\t', index=False, header=False)
-    
+
     weak_data = [
         ["weak1_0.0_10.0", 0.0, 10.0, "/m/09x0r,/m/04rlf"],
         ["weak2_10.0_20.0", 10.0, 20.0, "/m/09x0r"],
@@ -82,7 +80,7 @@ def create_test_setup():
     pd.DataFrame(weak_data, columns=["YTID", "start_seconds", "end_seconds", "positive_labels"]).to_csv(
         temp_dir / "weak.csv", index=False
     )
-    
+
     # Create AudioSet directory structure with dummy audio files
     audio_root = temp_dir / "audio"
 
@@ -126,7 +124,7 @@ def create_test_setup():
 
     # Update config to point to the audio root
     config["audio_root"] = str(audio_root)
-    
+
     return temp_dir, str(config_path)
 
 
@@ -140,26 +138,26 @@ def test_dataset():
         import os
         original_cwd = Path.cwd()
         os.chdir(temp_dir)
-        
+
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
-        
+
         # Test dataset
         dataset = AudioSetDataset(str(temp_dir / "processed" / "metadata.parquet"), config_path)
-        
+
         print(f"✓ Dataset loaded with {len(dataset)} samples")
-        
+
         # Test data split info
         info = dataset.get_data_split_info()
         print(f"✓ Data split: {info}")
-        
+
         # Test sample loading
         for i in range(min(3, len(dataset))):
             wav, y, labels_mask, clip_id = dataset[i]
-            
+
             print(f"✓ Sample {i}: wav {wav.shape}, y={y}, labels={labels_mask}, id={clip_id}")
-            
+
             # Check tensor properties
             assert isinstance(wav, torch.Tensor), "wav should be tensor"
             assert wav.dtype == torch.float32, "wav should be float32"
@@ -169,9 +167,9 @@ def test_dataset():
             assert y in [0, 1], "y should be 0 or 1"
             assert isinstance(labels_mask, set), "labels_mask should be set"
             assert isinstance(clip_id, str), "clip_id should be string"
-        
+
         print("✓ Dataset tests passed!")
-        
+
     finally:
         os.chdir(original_cwd)
         shutil.rmtree(temp_dir)
@@ -187,7 +185,7 @@ def test_sampler():
         import os
         original_cwd = Path.cwd()
         os.chdir(temp_dir)
-        
+
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
@@ -212,34 +210,34 @@ def test_sampler():
             num_replicas=1,
             rank=0
         )
-        
+
         print(f"✓ Sampler created with {sampler.steps_per_epoch} steps per epoch")
-        
+
         # Test batch generation
         sampler.set_epoch(0)
-        
+
         total_pos = 0
         total_strong_neg = 0
         total_weak_neg = 0
-        
+
         # Load dataset for verification
         dataset = AudioSetDataset(str(temp_dir / "processed" / "metadata.parquet"), config_path)
-        
+
         for step, batch_indices in enumerate(sampler):
             if step >= 3:  # Test first 3 batches
                 break
-            
+
             print(f"\n--- Batch {step} ---")
             print(f"Indices: {batch_indices}")
-            
+
             # Verify batch size
             assert len(batch_indices) == sampler.batch_size_per_device, f"Wrong batch size: {len(batch_indices)}"
-            
+
             # Count sample types
             pos_count = 0
             strong_neg_count = 0
             weak_neg_count = 0
-            
+
             for idx in batch_indices:
                 row = dataset.df.iloc[idx]
                 if row['is_positive']:
@@ -248,23 +246,23 @@ def test_sampler():
                     strong_neg_count += 1
                 else:  # weak
                     weak_neg_count += 1
-            
+
             print(f"Composition: {pos_count} pos, {strong_neg_count} strong neg, {weak_neg_count} weak neg")
-            
+
             # Verify composition (allow some flexibility due to small test data)
             expected_pos = sampler.pos_per_batch
             expected_strong = sampler.strong_neg_per_batch
             expected_weak = sampler.weak_neg_per_batch
-            
+
             print(f"Expected: {expected_pos} pos, {expected_strong} strong neg, {expected_weak} weak neg")
-            
+
             total_pos += pos_count
             total_strong_neg += strong_neg_count
             total_weak_neg += weak_neg_count
-        
+
         print(f"\n✓ Total across batches: {total_pos} pos, {total_strong_neg} strong neg, {total_weak_neg} weak neg")
         print("✓ Sampler tests passed!")
-        
+
     finally:
         os.chdir(original_cwd)
         shutil.rmtree(temp_dir)
@@ -279,7 +277,7 @@ def test_hard_negatives():
         import os
         original_cwd = Path.cwd()
         os.chdir(temp_dir)
-        
+
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
@@ -304,29 +302,29 @@ def test_hard_negatives():
             num_replicas=1,
             rank=0
         )
-        
+
         # Test adding hard negatives
         fake_hard_negs = [10, 20, 30]
         sampler.extend_hard_buffer(fake_hard_negs)
-        
+
         print(f"✓ Added {len(fake_hard_negs)} hard negatives")
         print(f"✓ Buffer size: {len(sampler.hard_buffer)}")
-        
+
         # Test that they get used
         sampler.set_epoch(1)
-        
+
         used_hard_negs = 0
         for step, batch_indices in enumerate(sampler):
             if step >= 2:  # Test first 2 batches
                 break
-            
+
             for idx in batch_indices:
                 if idx in fake_hard_negs:
                     used_hard_negs += 1
-        
+
         print(f"✓ Used {used_hard_negs} hard negatives in first 2 batches")
         print("✓ Hard negative tests passed!")
-        
+
     finally:
         os.chdir(original_cwd)
         shutil.rmtree(temp_dir)
@@ -341,7 +339,7 @@ def test_multi_gpu():
         import os
         original_cwd = Path.cwd()
         os.chdir(temp_dir)
-        
+
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
@@ -371,31 +369,31 @@ def test_multi_gpu():
                 rank=rank
             )
             samplers.append(sampler)
-        
+
         print(f"✓ Created {world_size} samplers for DDP")
-        
+
         # Test that indices are disjoint
         all_indices = set()
         for rank, sampler in enumerate(samplers):
             sampler.set_epoch(0)
-            
+
             rank_indices = set()
             for step, batch_indices in enumerate(sampler):
                 if step >= 2:  # Test first 2 batches
                     break
                 rank_indices.update(batch_indices)
-            
+
             print(f"✓ Rank {rank} used {len(rank_indices)} unique indices")
-            
+
             # Check for overlap
             overlap = all_indices & rank_indices
             assert len(overlap) == 0, f"Found overlapping indices between ranks: {overlap}"
-            
+
             all_indices.update(rank_indices)
-        
+
         print(f"✓ No index overlap between ranks")
         print("✓ Multi-GPU tests passed!")
-        
+
     finally:
         os.chdir(original_cwd)
         shutil.rmtree(temp_dir)

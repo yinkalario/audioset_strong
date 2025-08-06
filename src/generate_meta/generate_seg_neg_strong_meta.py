@@ -19,6 +19,8 @@ Segmentation Strategy:
 - Events < 1s: Concatenation with adjacent events when possible
 - Ensures negative samples don't contain target sounds
 
+Author: Yin Cao
+
 Input: Raw negative metadata from generate_raw_neg_strong_meta.py
 Output: Segmented negative metadata ready for training
 
@@ -37,11 +39,11 @@ Usage:
 Author: Yin Cao
 Date: 2025
 """
-
-import pandas as pd
 from typing import List, Tuple
 import argparse
 from pathlib import Path
+
+import pandas as pd
 
 # Configuration
 seg_clip_length = 1.0  # Length of segmented clips in seconds
@@ -66,6 +68,7 @@ def load_raw_metadata(file_path: str) -> pd.DataFrame:
 
 
 def segment_clip(start_time: float, end_time: float,
+    """TODO: Add docstring for segment_clip."""
                  clip_length: float) -> List[Tuple[float, float]]:
     """
     Segment a single clip into fixed-length segments with corrected logic.

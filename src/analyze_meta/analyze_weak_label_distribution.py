@@ -15,6 +15,8 @@ Features:
 - Statistical export and reporting capabilities
 - Label ID to display name mapping integration
 
+Author: Yin Cao
+
 Analysis Metrics:
 - Label occurrence frequency across datasets
 - Relative distribution percentages
@@ -41,15 +43,14 @@ Usage:
 Author: Yin Cao
 Date: 2025
 """
+from collections import Counter
+import argparse
+from pathlib import Path
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from collections import Counter
-import argparse
-from pathlib import Path
-
 
 def load_weak_segments_data(file_path: str) -> pd.DataFrame:
     """Load weak segments CSV data from file."""
@@ -58,13 +59,13 @@ def load_weak_segments_data(file_path: str) -> pd.DataFrame:
 
     # Load CSV file with proper column names
     # Format: YTID, start_seconds, end_seconds, positive_labels
-    df = pd.read_csv(file_path, 
+    df = pd.read_csv(file_path,
                      names=['YTID', 'start_seconds', 'end_seconds', 'positive_labels'],
                      skiprows=3,  # Skip the header comments
                      quotechar='"',  # Handle quoted fields properly
                      skipinitialspace=True,  # Skip spaces after delimiter
                      on_bad_lines='skip')  # Skip problematic lines
-    
+
     return df
 
 
@@ -73,7 +74,7 @@ def load_label_mapping(file_path: str) -> dict:
     if not Path(file_path).exists():
         print(f"Warning: Label mapping file not found: {file_path}")
         return {}
-    
+
     try:
         df = pd.read_csv(file_path, sep='\t', names=['label_id', 'display_name'], skiprows=1)
         return dict(zip(df['label_id'], df['display_name']))
@@ -85,22 +86,23 @@ def load_label_mapping(file_path: str) -> dict:
 def extract_labels_from_segments(df: pd.DataFrame) -> Counter:
     """Extract and count all labels from the positive_labels column."""
     label_counts = Counter()
-    
+
     for _, row in df.iterrows():
         positive_labels = str(row['positive_labels'])
-        
+
         # Remove quotes and split by comma
         labels = [label.strip().strip('"') for label in positive_labels.split(',')]
-        
+
         # Count each label
         for label in labels:
             if label and label != 'nan':  # Skip empty or nan labels
                 label_counts[label] += 1
-    
+
     return label_counts
 
 
 def create_label_distribution_analysis(all_label_counts: dict, label_mapping: dict,
+    """TODO: Add docstring for create_label_distribution_analysis."""
                                      output_dir: str = 'out'):
     """Create comprehensive label distribution analysis plots for multiple datasets."""
 
@@ -134,7 +136,7 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
         comparison_data.append(row)
 
     df = pd.DataFrame(comparison_data).sort_values('total_count', ascending=False)
-    
+
     # Calculate statistics for each dataset
     dataset_names = [name for name in all_label_counts.keys()]
 
@@ -154,7 +156,7 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
 
     print(f"\nOverall most frequent label: {df.iloc[0]['display_name']} ({df.iloc[0]['total_count']:,} total occurrences)")
     print(f"Overall least frequent label: {df.iloc[-1]['display_name']} ({df.iloc[-1]['total_count']:,} total occurrences)")
-    
+
     # Create comprehensive analysis plot
     fig, axes = plt.subplots(2, 2, figsize=(20, 12))
     fig.suptitle('AudioSet Weak Label Distribution Analysis (Multi-Dataset)', fontsize=16, fontweight='bold')
@@ -178,7 +180,7 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
     axes[0, 0].set_title('Top 20 Labels by Total Occurrence Count')
     axes[0, 0].legend(fontsize=8)
     axes[0, 0].invert_yaxis()
-    
+
     # 2. Dataset comparison for top 10 labels
     top_10 = df.head(10)
     x_pos = np.arange(len(top_10))
@@ -197,7 +199,7 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
                                 for name in top_10['display_name']], rotation=45, ha='right')
     axes[0, 1].legend()
     axes[0, 1].set_yscale('log')
-    
+
     # 3. Total counts by dataset
     dataset_totals = []
     for dataset_name in dataset_names:
@@ -217,11 +219,11 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
                                               for name in top_10['display_name']],
                    autopct='%1.1f%%', startangle=90, textprops={'fontsize': 8})
     axes[1, 1].set_title('Top 10 Labels Distribution (%)')
-    
+
     plt.tight_layout()
     plt.savefig(f'{output_dir}/weak_label_distribution_analysis.png', dpi=300, bbox_inches='tight')
     print(f"Saved comprehensive analysis to {output_dir}/weak_label_distribution_analysis.png")
-    
+
     # Create detailed top labels plot
     plt.figure(figsize=(15, 10))
     top_50 = df.head(50)
@@ -253,6 +255,7 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
 
 
 def create_individual_analysis(label_counts_dict: dict, label_mapping: dict,
+    """TODO: Add docstring for create_individual_analysis."""
                               output_dir: str, dataset_name: str):
     """Create analysis for a single dataset."""
 

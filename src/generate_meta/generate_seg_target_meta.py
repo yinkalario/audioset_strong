@@ -19,6 +19,8 @@ Segmentation Strategy:
 - Events < 1s: Concatenation with adjacent segments when possible
 - Maintains original temporal boundaries and overlap classifications
 
+Author: Yin Cao
+
 Input: Raw target metadata from generate_raw_target_meta.py
 Output: Segmented metadata ready for audio loading and training
 
@@ -37,11 +39,11 @@ Usage:
 Author: Yin Cao
 Date: 2025
 """
-
-import pandas as pd
 from typing import List, Tuple
 import argparse
 from pathlib import Path
+
+import pandas as pd
 
 # Configuration
 seg_clip_length = 1.0  # Length of segmented clips in seconds
@@ -66,6 +68,7 @@ def load_raw_metadata(file_path: str) -> pd.DataFrame:
 
 
 def segment_clip(start_time: float, end_time: float,
+    """TODO: Add docstring for segment_clip."""
                  clip_length: float) -> List[Tuple[float, float]]:
     """
     Segment a single clip into fixed-length segments with corrected logic.

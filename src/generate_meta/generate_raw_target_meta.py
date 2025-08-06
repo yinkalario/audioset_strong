@@ -17,17 +17,19 @@ Features:
 Output Structure:
 - meta/{target_name}/raw/pos/{target_name}_{ov/nov}_{dataset}_strong.tsv
 
+Author: Yin Cao
+
 Usage:
     python generate_raw_target_meta.py --input-dir meta --output-dir meta
 
 Author: Yin Cao
 Date: 2025
 """
-
-import pandas as pd
 from typing import List, Tuple, Dict
 import argparse
 from pathlib import Path
+
+import pandas as pd
 
 # Target labels and names configuration
 target_labels = ['/t/dd00002']  # Baby cry, infant cry
@@ -58,12 +60,14 @@ def load_tsv_data(file_path: str) -> pd.DataFrame:
 
 
 def check_temporal_overlap(target_start: float, target_end: float,
+    """TODO: Add docstring for check_temporal_overlap."""
                            other_start: float, other_end: float) -> bool:
     """Check if two time intervals overlap."""
     return not (target_end <= other_start or target_start >= other_end)
 
 
 def categorize_target_events(df: pd.DataFrame,
+    """TODO: Add docstring for categorize_target_events."""
                              target_labels: List[str]) -> Tuple[List[Dict], List[Dict]]:
     """
     Categorize target sound events into overlapped and non-overlapped based on

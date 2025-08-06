@@ -16,6 +16,8 @@ Features:
 - Support for multiple strong label datasets
 - Label ID to display name mapping integration
 
+Author: Yin Cao
+
 Analysis Metrics:
 - Total duration per label (seconds and hours)
 - Label frequency and distribution patterns
@@ -38,10 +40,11 @@ Usage:
 Author: Yin Cao
 Date: 2025
 """
-
 import os
+
 import pandas as pd
 import matplotlib
+
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -132,20 +135,20 @@ def analyze_label_distribution(train_file: str, mid_to_display_path: str):
     output_file = 'out/strong_label_distribution_stats.csv'
     label_stats.to_csv(output_file, index=False)
     print(f"\nDetailed statistics saved to: {output_file}")
-    
+
     return label_stats
 
 
 def create_distribution_plots(label_stats: pd.DataFrame):
     """Create various distribution plots."""
-    
+
     # Set style
     plt.style.use('default')
     sns.set_palette("husl")
-    
+
     # Create figure with subplots
     fig = plt.figure(figsize=(20, 15))
-    
+
     # 1. Top 30 labels bar plot (by duration)
     plt.subplot(2, 3, 1)
     top_30 = label_stats.head(30)
@@ -168,7 +171,7 @@ def create_distribution_plots(label_stats: pd.DataFrame):
     plt.title('All Labels Duration Distribution (Log Scale)', fontsize=14, fontweight='bold')
     plt.xlabel('Label Rank')
     plt.ylabel('Total Duration (Hours, Log Scale)')
-    
+
     # 3. Cumulative percentage (by duration)
     plt.subplot(2, 3, 3)
     cumulative_pct = label_stats['duration_percentage'].cumsum()
@@ -191,7 +194,7 @@ def create_distribution_plots(label_stats: pd.DataFrame):
     plt.xlabel('Total Duration (Hours)')
     plt.ylabel('Number of Labels')
     plt.yscale('log')
-    
+
     # 5. Box plot of duration percentages
     plt.subplot(2, 3, 5)
     plt.boxplot(label_stats['duration_percentage'], vert=True)
@@ -209,7 +212,7 @@ def create_distribution_plots(label_stats: pd.DataFrame):
     plt.text(1.2, label_stats['duration_percentage'].median(), stats_text,
              verticalalignment='center', fontsize=10,
              bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.8))
-    
+
     # 6. Top 20 labels with names (by duration)
     plt.subplot(2, 3, 6)
     top_20 = label_stats.head(20)
@@ -238,19 +241,19 @@ def create_distribution_plots(label_stats: pd.DataFrame):
     plt.savefig(output_plot, dpi=300, bbox_inches='tight')
     print(f"Distribution plots saved to: {output_plot}")
     plt.close()
-    
+
     # Create a separate detailed plot for top labels
     create_detailed_top_labels_plot(label_stats)
 
 
 def create_detailed_top_labels_plot(label_stats: pd.DataFrame):
     """Create a detailed plot focusing on top labels."""
-    
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
-    
+
     # Top 50 labels
     top_50 = label_stats.head(50)
-    
+
     # Left plot: Bar chart with label names (by duration)
     y_pos = np.arange(len(top_50))
     bars = ax1.barh(y_pos, top_50['total_duration_hours'],
@@ -268,7 +271,7 @@ def create_detailed_top_labels_plot(label_stats: pd.DataFrame):
         ax1.text(width + width*0.01, bar.get_y() + bar.get_height()/2.,
                 f'{top_50.iloc[i]["duration_percentage"]:.2f}%',
                 ha='left', va='center', fontsize=7)
-    
+
     # Right plot: Pie chart for top 10 (by duration)
     top_10 = label_stats.head(10)
     others_duration = label_stats.iloc[10:]['total_duration_hours'].sum()
@@ -348,7 +351,7 @@ def main():
         print(f"Completed analysis for {dataset_name}")
 
     print(f"\nAnalysis complete for all {len(all_stats)} datasets!")
-    
+
     print("\nAnalysis complete!")
     print(f"Total unique labels: {len(label_stats)}")
     print(f"Most duration label: {label_stats.iloc[0]['display_name']} "
