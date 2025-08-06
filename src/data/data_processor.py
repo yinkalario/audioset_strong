@@ -117,7 +117,7 @@ class AudioSetDataProcessor:
     def load_strong_metadata(self, paths: List[str], is_positive: bool) -> pd.DataFrame:
         """Load strong labeling TSV files."""
         all_data = []
-        import pudb;pu.db
+
         for path in paths:
             path_obj = Path(path)
             if not path_obj.exists():
@@ -173,7 +173,7 @@ class AudioSetDataProcessor:
     def load_weak_metadata(self, paths: List[str]) -> pd.DataFrame:
         """Load weak labeling CSV files."""
         all_data = []
-        import pudb;pu.db
+
         for path in paths:
             path_obj = Path(path)
             if not path_obj.exists():
@@ -226,7 +226,7 @@ class AudioSetDataProcessor:
         """
         if df.empty:
             return df
-        import pudb;pu.db
+
         # Only apply to weak negative samples from unbalanced training data
         weak_mask = df['data_type'] == 'weak'
         unbalanced_mask = df['source_file'].str.contains('unbalanced', na=False)
@@ -262,7 +262,7 @@ class AudioSetDataProcessor:
         kept_head = trimmed_target['is_head'].sum()
 
         print(f"After trimming: kept {kept_head}/{head_count} head samples "
-              f"({kept_head/head_count:.1%} kept)")
+              f"({kept_head/head_count:.2%} kept)")
 
         # Remove temporary column
         trimmed_target = trimmed_target.drop('is_head', axis=1)
@@ -277,7 +277,7 @@ class AudioSetDataProcessor:
         """Build label-to-indices mappings for sampling."""
         strong_neg_map = {}
         weak_neg_map = {}
-        import pudb;pu.db
+
         # Strong negative mappings
         strong_neg_df = df[(df['data_type'] == 'strong') & (~df['is_positive'])]
         for idx, row in strong_neg_df.iterrows():
@@ -328,7 +328,7 @@ class AudioSetDataProcessor:
         """Compute √-frequency weights for balanced sampling."""
         if not label_map:
             return [], []
-        import pudb;pu.db
+
         labels = list(label_map.keys())
         counts = [len(label_map[label]) for label in labels]
         
@@ -346,7 +346,7 @@ class AudioSetDataProcessor:
     def process_and_save(self) -> None:
         """Main processing pipeline."""
         print("=== AudioSet Data Processing ===")
-        import pudb;pu.db
+
         # Load all metadata
         pos_strong = self.load_strong_metadata(
             self.config["pos_strong_paths"], is_positive=True
@@ -382,7 +382,7 @@ class AudioSetDataProcessor:
         # Compute sampling weights
         strong_labels, strong_probs = self.compute_sqrt_weights(strong_neg_map)
         weak_labels, weak_probs = self.compute_sqrt_weights(weak_neg_map)
-        import pudb;pu.db
+
         # Ensure proper data types
         df['start_time'] = df['start_time'].astype(float)
         df['end_time'] = df['end_time'].astype(float)

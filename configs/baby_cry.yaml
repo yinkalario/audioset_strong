@@ -36,11 +36,11 @@ weak_neg_per_batch_frac: 0.5     # 50 % weak negatives
 tierA_fraction: 0.6         # 60 % of strong‑neg clips in Tier‑A
 primary_fraction: 0.9       # inside Tier‑A → 90 % √freq, 10 % completion
 hard_buffer_size: 50000
-completion_rare_cutoff: 5   # labels with < clips are bucketed as other_rare
+completion_rare_cutoff: 10   # labels with < clips are bucketed as other_rare
 
 # === Weak‑neg balancing ===
 head_labels: ["/m/09x0r", "/m/04rlf"]   # speech & music MIDs
-head_keep_frac: 0.1                     # keep faction of those heads
+head_keep_frac: 0.2                     # keep faction of those heads
 head_trim_seed: 42                      # random seed for reproducible head trimming
 
 # === Training schedule ===
