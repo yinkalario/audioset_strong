@@ -14,6 +14,8 @@ clean-metadata: ## Remove generated metadata files (preserves original AudioSet 
 	@echo "Removing generated metadata files..."
 	find meta/ -mindepth 2 -name "*.tsv" -type f -delete 2>/dev/null || true
 	find meta/ -mindepth 2 -name "*.csv" -type f -delete 2>/dev/null || true
+	find meta/ -mindepth 2 -name "*.pkl" -type f -delete 2>/dev/null || true
+	find meta/ -mindepth 2 -name "*.parquet" -type f -delete 2>/dev/null || true
 	find meta/ -type d -empty -delete 2>/dev/null || true
 	@echo "Generated metadata files removed (original AudioSet files preserved)"
 

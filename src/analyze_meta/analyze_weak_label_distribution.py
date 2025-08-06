@@ -207,6 +207,7 @@ def create_label_distribution_analysis(all_label_counts: dict, label_mapping: di
     axes[1, 0].bar(dataset_names, dataset_totals, color=colors[:len(dataset_names)])
     axes[1, 0].set_ylabel('Total Segments')
     axes[1, 0].set_title('Total Segments by Dataset')
+    axes[1, 0].set_xticks(range(len(dataset_names)))
     axes[1, 0].set_xticklabels([name.replace('_', ' ').title() for name in dataset_names])
 
     # 4. Label distribution comparison

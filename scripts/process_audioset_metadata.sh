@@ -135,31 +135,12 @@ print_step "Step 5: Generating Segmented Negative Metadata"
 python3 src/generate_meta/generate_seg_neg_strong_meta.py
 print_success "Generated segmented negative metadata for all sound types"
 
-# Optional: Generate label distribution analyses
-print_step "Optional: Generating Label Distribution Analyses"
-print_warning "Generating strong and weak label distribution analyses..."
 
-# Use the correct analysis script for strong labels
-python3 src/analyze_meta/analyze_single_strong_dataset.py \
-    --input-file meta/audioset_train_strong.tsv \
-    --output-prefix out/strong_label_distribution_train \
-    --dataset-name "Train" \
-    --mid-to-display meta/mid_to_display_name.tsv
-print_success "Generated strong label distribution analysis"
-
-# Use the correct arguments for weak labels
-python3 src/analyze_meta/analyze_weak_label_distribution.py \
-    --unbalanced-train meta/unbalanced_train_segments.csv \
-    --balanced-train meta/balanced_train_segments.csv \
-    --eval-file meta/eval_segments.csv \
-    --mid-to-display meta/mid_to_display_name.tsv \
-    --output-dir out
-print_success "Generated weak label distribution analysis"
 
 # Clean up backup files
 rm -f src/generate_meta/*.bak src/analyze_meta/*.bak
 
-print_step "Pipeline Complete!"
+print_step "Metadata Processing Complete!"
 print_success "All metadata processing steps completed successfully"
 
 # Display summary
@@ -178,4 +159,5 @@ for sound_type in "${SOUND_TYPES[@]}"; do
     echo "│       └── neg_strong/   # 1-second segmented negative labels"
 done
 
-print_success "Ready for dataloader implementation!"
+print_success "Metadata processing complete!"
+print_warning "To run analysis on the generated metadata, use: bash scripts/analyze_all_datasets.sh"
