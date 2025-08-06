@@ -181,10 +181,19 @@ def test_complete_pipeline():
         
         # Step 3: Create sampler
         print("\n3. Creating sampler...")
+
+        # Load config for batch size
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
+
         sampler = TwoTierBatchSampler(
-            str(temp_dir / "processed" / "metadata.parquet"),
-            str(temp_dir / "processed" / "label_mappings.pkl"),
-            config_path
+            dataset=dataset,
+            batch_size_per_device=config["batch_size"],
+            metadata_path=str(temp_dir / "processed" / "metadata.parquet"),
+            mappings_path=str(temp_dir / "processed" / "label_mappings.pkl"),
+            config_path=config_path,
+            num_replicas=1,
+            rank=0
         )
         
         print(f"   Steps per epoch: {sampler.get_steps_per_epoch()}")
@@ -265,9 +274,13 @@ def test_complete_pipeline():
 
         # Create a fresh sampler without hard negatives for determinism test
         fresh_sampler = TwoTierBatchSampler(
-            str(temp_dir / "processed" / "metadata.parquet"),
-            str(temp_dir / "processed" / "label_mappings.pkl"),
-            config_path
+            dataset=dataset,
+            batch_size_per_device=config["batch_size"],
+            metadata_path=str(temp_dir / "processed" / "metadata.parquet"),
+            mappings_path=str(temp_dir / "processed" / "label_mappings.pkl"),
+            config_path=config_path,
+            num_replicas=1,
+            rank=0
         )
 
         fresh_sampler.set_epoch(0)

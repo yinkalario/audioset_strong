@@ -66,8 +66,8 @@ class AudioSetDataset(torch.utils.data.Dataset):
         print(f"[Dataset] Clip length: {self.clip_length}s ({self.n_samples} samples)")
     
     def __len__(self) -> int:
-        """Return total number of samples."""
-        return len(self.df)
+        """Return number of positive samples (for epoch-based training)."""
+        return len(self.pos_indices)
     
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int, Set[str], str]:
         """Get a single sample.

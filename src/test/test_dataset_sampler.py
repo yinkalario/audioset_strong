@@ -191,17 +191,29 @@ def test_sampler():
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
-        
+
+        # Create dataset
+        dataset = AudioSetDataset(
+            str(temp_dir / "processed" / "metadata.parquet"),
+            config_path
+        )
+
+        # Load config for batch size
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
+
         # Test sampler
         sampler = TwoTierBatchSampler(
-            str(temp_dir / "processed" / "metadata.parquet"),
-            str(temp_dir / "processed" / "label_mappings.pkl"),
-            config_path,
-            world_size=1,
+            dataset=dataset,
+            batch_size_per_device=config["batch_size"],
+            metadata_path=str(temp_dir / "processed" / "metadata.parquet"),
+            mappings_path=str(temp_dir / "processed" / "label_mappings.pkl"),
+            config_path=config_path,
+            num_replicas=1,
             rank=0
         )
         
-        print(f"✓ Sampler created with {sampler.get_steps_per_epoch()} steps per epoch")
+        print(f"✓ Sampler created with {sampler.steps_per_epoch} steps per epoch")
         
         # Test batch generation
         sampler.set_epoch(0)
@@ -221,7 +233,7 @@ def test_sampler():
             print(f"Indices: {batch_indices}")
             
             # Verify batch size
-            assert len(batch_indices) == sampler.batch_size, f"Wrong batch size: {len(batch_indices)}"
+            assert len(batch_indices) == sampler.batch_size_per_device, f"Wrong batch size: {len(batch_indices)}"
             
             # Count sample types
             pos_count = 0
@@ -271,12 +283,26 @@ def test_hard_negatives():
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
-        
+
+        # Create dataset
+        dataset = AudioSetDataset(
+            str(temp_dir / "processed" / "metadata.parquet"),
+            config_path
+        )
+
+        # Load config for batch size
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
+
         # Create sampler
         sampler = TwoTierBatchSampler(
-            str(temp_dir / "processed" / "metadata.parquet"),
-            str(temp_dir / "processed" / "label_mappings.pkl"),
-            config_path
+            dataset=dataset,
+            batch_size_per_device=config["batch_size"],
+            metadata_path=str(temp_dir / "processed" / "metadata.parquet"),
+            mappings_path=str(temp_dir / "processed" / "label_mappings.pkl"),
+            config_path=config_path,
+            num_replicas=1,
+            rank=0
         )
         
         # Test adding hard negatives
@@ -319,17 +345,29 @@ def test_multi_gpu():
         # Process data
         processor = AudioSetDataProcessor(config_path)
         processor.process_and_save()
-        
+
+        # Create dataset
+        dataset = AudioSetDataset(
+            str(temp_dir / "processed" / "metadata.parquet"),
+            config_path
+        )
+
+        # Load config for batch size
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
+
         # Test with 2 "GPUs"
         world_size = 2
         samplers = []
-        
+
         for rank in range(world_size):
             sampler = TwoTierBatchSampler(
-                str(temp_dir / "processed" / "metadata.parquet"),
-                str(temp_dir / "processed" / "label_mappings.pkl"),
-                config_path,
-                world_size=world_size,
+                dataset=dataset,
+                batch_size_per_device=config["batch_size"],
+                metadata_path=str(temp_dir / "processed" / "metadata.parquet"),
+                mappings_path=str(temp_dir / "processed" / "label_mappings.pkl"),
+                config_path=config_path,
+                num_replicas=world_size,
                 rank=rank
             )
             samplers.append(sampler)

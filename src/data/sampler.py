@@ -18,27 +18,58 @@ Author: Yin Cao
 
 import random
 from collections import deque
-from typing import List, Iterator, Dict
+from typing import List, Iterator, Dict, Optional
 
 import numpy as np
 import pandas as pd
 import yaml
+import torch
+from torch.utils.data import Sampler
 
 
-class TwoTierBatchSampler:
+class TwoTierBatchSampler(Sampler):
     """Two-tier batch sampler for AudioSet training."""
     
-    def __init__(self, metadata_path: str, mappings_path: str, config_path: str,
-                 world_size: int = 1, rank: int = 0):
+    def __init__(self, dataset, batch_size_per_device: int, metadata_path: str,
+                 mappings_path: str, config_path: str, num_replicas: Optional[int] = None,
+                 rank: Optional[int] = None, seed: int = 0, drop_last: bool = False):
         """Initialize the sampler.
 
         Args:
+            dataset: The dataset to sample from
+            batch_size_per_device: Batch size per device/GPU
             metadata_path: Path to processed metadata parquet file
             mappings_path: Path to label mappings pickle file
             config_path: Path to config YAML file
-            world_size: Number of GPUs for DDP
-            rank: Current GPU rank for DDP
+            num_replicas: Number of processes participating in distributed training
+            rank: Rank of the current process within num_replicas
+            seed: Random seed used to shuffle the sampler
+            drop_last: If True, drop the last incomplete batch
         """
+        super().__init__(dataset)
+
+        if num_replicas is None:
+            if torch.distributed.is_available() and torch.distributed.is_initialized():
+                num_replicas = torch.distributed.get_world_size()
+            else:
+                num_replicas = 1
+        if rank is None:
+            if torch.distributed.is_available() and torch.distributed.is_initialized():
+                rank = torch.distributed.get_rank()
+            else:
+                rank = 0
+        if rank >= num_replicas or rank < 0:
+            raise ValueError(
+                "Invalid rank {}, rank should be in the range [0, {}]".format(
+                    rank, num_replicas - 1))
+
+        self.dataset = dataset
+        self.batch_size_per_device = batch_size_per_device
+        self.num_replicas = num_replicas
+        self.rank = rank
+        self.epoch = 0
+        self.seed = seed
+        self.drop_last = drop_last
         # Load configuration
         self.config = yaml.safe_load(open(config_path))
         
@@ -61,16 +92,16 @@ class TwoTierBatchSampler:
         weak_neg_indices = self.df[self.df['data_type'] == 'weak'].index.tolist()
         
         # Apply DDP stride partitioning
-        self.pos_indices = pos_indices[rank::world_size]
-        self.strong_neg_indices = strong_neg_indices[rank::world_size]
-        self.weak_neg_indices = weak_neg_indices[rank::world_size]
+        self.pos_indices = pos_indices[self.rank::self.num_replicas]
+        self.strong_neg_indices = strong_neg_indices[self.rank::self.num_replicas]
+        self.weak_neg_indices = weak_neg_indices[self.rank::self.num_replicas]
         
         # Apply DDP partitioning to label mappings
         self.strong_neg_map = self._partition_label_map(
-            self.mappings['strong_neg_map'], rank, world_size
+            self.mappings['strong_neg_map'], self.rank, self.num_replicas
         )
         self.weak_neg_map = self._partition_label_map(
-            self.mappings['weak_neg_map'], rank, world_size
+            self.mappings['weak_neg_map'], self.rank, self.num_replicas
         )
 
         # Sampling weights (same across all ranks)
@@ -79,16 +110,15 @@ class TwoTierBatchSampler:
         self.weak_labels = self.mappings['weak_labels']
         self.weak_probs = self.mappings['weak_probs']
         
-        # Batch composition
-        self.batch_size = self.config["batch_size"]
-        self.pos_per_batch = int(self.batch_size * self.config["pos_per_batch_frac"])
-        self.strong_neg_per_batch = int(self.batch_size * self.config["strong_neg_per_batch_frac"])
-        self.weak_neg_per_batch = int(self.batch_size * self.config["weak_neg_per_batch_frac"])
-        
+        # Batch composition (use batch_size_per_device)
+        self.pos_per_batch = int(self.batch_size_per_device * self.config["pos_per_batch_frac"])
+        self.strong_neg_per_batch = int(self.batch_size_per_device * self.config["strong_neg_per_batch_frac"])
+        self.weak_neg_per_batch = int(self.batch_size_per_device * self.config["weak_neg_per_batch_frac"])
+
         # Ensure batch adds up correctly
         total = self.pos_per_batch + self.strong_neg_per_batch + self.weak_neg_per_batch
-        if total != self.batch_size:
-            self.weak_neg_per_batch = self.batch_size - self.pos_per_batch - self.strong_neg_per_batch
+        if total != self.batch_size_per_device:
+            self.weak_neg_per_batch = self.batch_size_per_device - self.pos_per_batch - self.strong_neg_per_batch
         
         # Two-tier parameters
         self.tierA_count = int(self.strong_neg_per_batch * self.config["tierA_fraction"])
@@ -98,23 +128,23 @@ class TwoTierBatchSampler:
         # Hard negative buffer
         self.hard_buffer = deque(maxlen=self.config["hard_buffer_size"])
         
-        # DDP parameters
-        self.rank = rank
-        self.world_size = world_size
-        
-        # Calculate steps per epoch
+        # Calculate steps per epoch based on positive samples
         self.steps_per_epoch = ((len(self.pos_indices) + self.pos_per_batch - 1)
                                 // self.pos_per_batch)
-        
-        print(f"[Sampler] Rank {rank}: {len(self.pos_indices)} pos, "
+
+        print(f"[Sampler] Rank {self.rank}: {len(self.pos_indices)} pos, "
               f"{len(self.strong_neg_indices)} strong neg, "
               f"{len(self.weak_neg_indices)} weak neg")
         print(f"[Sampler] Batch: {self.pos_per_batch} pos + "
               f"{self.strong_neg_per_batch} strong ({self.tierA_count}A+{self.tierB_count}B) + "
               f"{self.weak_neg_per_batch} weak")
         print(f"[Sampler] Steps per epoch: {self.steps_per_epoch}")
-        
+
         self.set_epoch(0)
+
+    def __len__(self) -> int:
+        """Return the number of samples per epoch (number of batches * batch_size_per_device)."""
+        return self.steps_per_epoch * self.batch_size_per_device
 
     def _parse_labels_from_csv(self, labels_str: str) -> list:
         """Parse labels from CSV string representation."""
@@ -144,9 +174,9 @@ class TwoTierBatchSampler:
     def set_epoch(self, epoch: int) -> None:
         """Set epoch for deterministic shuffling."""
         self.epoch = epoch
-        
+
         # Deterministic but different seed per rank and epoch
-        seed = 2025 + self.rank + 31 * epoch
+        seed = self.seed + self.rank + 31 * epoch
         random.seed(seed)
         np.random.seed(seed)
         
