@@ -30,8 +30,28 @@ from src.data.dataset import AudioSetDataset  # noqa: E402
 from src.data.sampler import TwoTierBatchSampler  # noqa: E402
 
 
+def custom_collate_fn(batch):
+    """Custom collate function to handle variable-length label lists."""
+    # Separate the batch elements
+    wavs, labels, label_lists, clip_ids = zip(*batch)
+
+    # Debug: Check shapes
+    print(f"Debug: Batch size: {len(wavs)}")
+    print(f"Debug: Audio shapes: {[w.shape for w in wavs[:3]]}")  # First 3 shapes
+    print(f"Debug: Label list lengths: {[len(ll) for ll in label_lists[:3]]}")
+
+    # Stack tensors and convert to tensors
+    wav_batch = torch.stack(wavs)
+    label_batch = torch.tensor(labels)
+
+    # Keep label_lists and clip_ids as lists (variable length)
+    return wav_batch, label_batch, list(label_lists), list(clip_ids)
+
+
 def simple_model(input_size: int, num_classes: int = 1) -> nn.Module:
     """Create a simple CNN model for demonstration."""
+    # Note: input_size is provided for interface compatibility but not used
+    # in this simple adaptive model
     return nn.Sequential(
         nn.Conv1d(1, 32, kernel_size=1024, stride=512),
         nn.ReLU(),
@@ -80,7 +100,7 @@ def main():
     print("\n3. Setting up two-tier batch sampler...")
 
     # Load config to get batch size
-    with open(config_path) as f:
+    with open(config_path, encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     sampler = TwoTierBatchSampler(
@@ -103,7 +123,8 @@ def main():
         dataset,
         batch_sampler=sampler,
         num_workers=0,  # Set to 0 for debugging, increase for real training
-        pin_memory=True
+        pin_memory=True,
+        collate_fn=custom_collate_fn  # Use custom collate function
     )
 
     # Step 5: Create model

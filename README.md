@@ -80,8 +80,13 @@ sampler = TwoTierBatchSampler(
     rank=0           # Current GPU rank
 )
 
-# 4. Create DataLoader
-dataloader = DataLoader(dataset, batch_sampler=sampler)
+# 4. Create DataLoader with custom collate function
+def custom_collate_fn(batch):
+    """Handle variable-length label lists."""
+    wavs, labels, label_lists, clip_ids = zip(*batch)
+    return torch.stack(wavs), torch.tensor(labels), list(label_lists), list(clip_ids)
+
+dataloader = DataLoader(dataset, batch_sampler=sampler, collate_fn=custom_collate_fn)
 
 # 5. Training loop
 for epoch in range(num_epochs):
